@@ -40,6 +40,11 @@ export class Hud {
   private albumPhotoIndex = 0
   private shownState = ''
   private toastTimer = 0
+  private toastSticky = false
+  private toastTypeFull = ''
+  private toastTypePos = 0
+  private toastTypeActive = false
+  private readonly toastTypeSpeed = 22
 
   /** True while the journal is up — the game suspends input meanwhile. */
   open = false
@@ -328,7 +333,14 @@ export class Hud {
       }
     }
 
-    if (this.toastTimer > 0) {
+    if (this.toastTypeActive) {
+      this.toastTypePos = Math.min(this.toastTypeFull.length, this.toastTypePos + this.toastTypeSpeed * dt)
+      const chars = Math.floor(this.toastTypePos)
+      this.toastText.textContent = this.toastTypeFull.slice(0, chars)
+      if (chars >= this.toastTypeFull.length) this.toastTypeActive = false
+    }
+
+    if (!this.toastSticky && this.toastTimer > 0) {
       this.toastTimer -= dt
       if (this.toastTimer <= 0) this.toast.classList.remove('show')
     }
@@ -338,15 +350,43 @@ export class Hud {
     this.toastText.textContent = `found ${item.scroll.title} — press E to read`
     this.toast.style.color = '#111'
     this.toast.classList.add('show')
+    this.toastSticky = false
+    this.toastTypeActive = false
+    this.toastTypeFull = ''
+    this.toastTypePos = 0
     this.toastTimer = 3.2
     this.shownState = ''
   }
 
-  say(text: string, colour = '#111', seconds = 1.8): void {
+  say(text: string, colour = '#111'): void {
     this.toastText.textContent = text
     this.toast.style.color = colour
     this.toast.classList.add('show')
-    this.toastTimer = Math.max(0.4, seconds)
+    this.toastSticky = true
+    this.toastTypeActive = false
+    this.toastTypeFull = ''
+    this.toastTypePos = 0
+    this.toastTimer = 0
+  }
+
+  sayTyped(text: string, colour = '#111'): void {
+    this.toast.style.color = colour
+    this.toast.classList.add('show')
+    this.toastSticky = true
+    this.toastTypeFull = text
+    this.toastTypePos = 0
+    this.toastTypeActive = true
+    this.toastText.textContent = ''
+    this.toastTimer = 0
+  }
+
+  dismissToast(): void {
+    this.toast.classList.remove('show')
+    this.toastSticky = false
+    this.toastTypeActive = false
+    this.toastTypeFull = ''
+    this.toastTypePos = 0
+    this.toastTimer = 0
   }
 
   /** Forces the next update to rewrite the DOM. */

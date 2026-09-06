@@ -104,6 +104,8 @@ function box(
  */
 function buildResident(): THREE.Group {
   const figure = buildFigure({}, { hair: false })
+  figure.rig.name = 'house-resident'
+  figure.head.name = 'house-resident-head'
 
   // Thighs forward, shins back down. The two cancel, so the shins hang
   // vertically and the read of "sitting" comes from the fold at the hip.
@@ -211,12 +213,19 @@ export class House {
   readonly group = new THREE.Group()
   /** Roof and ceiling together; hidden while you're inside. */
   readonly roof = new THREE.Group()
+  /** The seated character inside the house, used for interactions. */
+  readonly resident: THREE.Object3D | null
+  /** Head mesh used for look-at animation when interacting. */
+  readonly residentHead: THREE.Object3D | null
   /** World position of the middle of the room, just above the floor. */
   readonly interior = new THREE.Vector3()
 
   private readonly toLocal = new THREE.Matrix4()
   private readonly toWorld = new THREE.Matrix4()
   private readonly floorProbe = new THREE.Vector3()
+  private readonly residentTargetLocal = new THREE.Vector3()
+  private residentHeadYaw = 0
+  private residentHeadPitch = 0
 
   constructor(
     planet: Planet,
@@ -268,8 +277,39 @@ export class House {
     this.buildWindows(mats)
     this.buildRoof(mats)
 
-    this.group.add(buildStudy(mats))
+    const study = buildStudy(mats)
+    this.resident = study.getObjectByName('house-resident') ?? null
+    this.residentHead = study.getObjectByName('house-resident-head') ?? null
+    this.group.add(study)
     this.group.add(this.roof)
+  }
+
+  private dampAngle(current: number, target: number, rate: number, dt: number): number {
+    return target + (current - target) * Math.exp(-rate * dt)
+  }
+
+  /** Smoothly turns the resident's head toward a world-space point. */
+  lookResidentAt(worldPoint: THREE.Vector3, dt: number): void {
+    if (!this.residentHead || !this.residentHead.parent) return
+
+    this.residentHead.parent.worldToLocal(this.residentTargetLocal.copy(worldPoint))
+    this.residentTargetLocal.sub(this.residentHead.position)
+
+    const planar = Math.hypot(this.residentTargetLocal.x, this.residentTargetLocal.z)
+    const targetYaw = Math.max(-0.85, Math.min(0.85, Math.atan2(-this.residentTargetLocal.x, -this.residentTargetLocal.z)))
+    const targetPitch = Math.max(-0.45, Math.min(0.45, Math.atan2(this.residentTargetLocal.y, Math.max(planar, 1e-6))))
+
+    this.residentHeadYaw = this.dampAngle(this.residentHeadYaw, targetYaw, 10, dt)
+    this.residentHeadPitch = this.dampAngle(this.residentHeadPitch, targetPitch, 10, dt)
+    this.residentHead.rotation.set(this.residentHeadPitch, this.residentHeadYaw, 0)
+  }
+
+  /** Returns the resident's head to a neutral forward pose. */
+  resetResidentLook(dt: number): void {
+    if (!this.residentHead) return
+    this.residentHeadYaw = this.dampAngle(this.residentHeadYaw, 0, 10, dt)
+    this.residentHeadPitch = this.dampAngle(this.residentHeadPitch, 0, 10, dt)
+    this.residentHead.rotation.set(this.residentHeadPitch, this.residentHeadYaw, 0)
   }
 
   /** Walls and lintel, straight from the collision boxes so the two can't drift. */

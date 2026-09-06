@@ -48,6 +48,7 @@ export const FIGURE_HIP_Y = 0.27
 export interface Figure {
   /** Origin at the feet, facing -Z. */
   rig: THREE.Group
+  head: THREE.Object3D
   legL: THREE.Group
   legR: THREE.Group
   kneeL: THREE.Group
@@ -87,8 +88,8 @@ export function buildFigure(
   // show rather than being swallowed by it.
   for (const side of [-1, 1]) {
     const eye = new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 10), dark)
-    eye.position.set(side * 0.101, 1.057, -0.241)
-    rig.add(eye)
+    eye.position.set(side * 0.101, 0.037, -0.241)
+    head.add(eye)
   }
 
   // --- hair -------------------------------------------------------------
@@ -170,7 +171,7 @@ export function buildFigure(
     }
   })
 
-  return { rig, legL, legR, kneeL, kneeR, armL, armR }
+  return { rig, head, legL, legR, kneeL, kneeR, armL, armR }
 }
 
 /**

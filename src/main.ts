@@ -254,7 +254,7 @@ function nextScrollPlanet(): string | null {
 
 type ClickTarget =
   | { kind: 'scroll'; item: (typeof items)[number] }
-  | { kind: 'interaction'; text?: string; onClick?: () => void }
+  | { kind: 'interaction'; root: THREE.Object3D; text?: string; onClick?: () => void }
 
 function pickTarget(ndc: THREE.Vector2): ClickTarget | null {
   const nextPlanet = nextScrollPlanet()
@@ -277,7 +277,7 @@ function pickTarget(ndc: THREE.Vector2): ClickTarget | null {
     }
 
     const target = findInteractionTarget(hit.object)
-    if (target) return { kind: 'interaction', text: target.text, onClick: target.onClick }
+    if (target) return { kind: 'interaction', root: target.root, text: target.text, onClick: target.onClick }
   }
 
   // Slightly forgiving fallback: if you're close and aiming near the target,
@@ -314,7 +314,7 @@ function pickTarget(ndc: THREE.Vector2): ClickTarget | null {
     const score = align - dist * 0.0008
     if (!best || score > best.score) best = {
       score,
-      target: { kind: 'interaction', text: entry.text, onClick: entry.onClick },
+      target: { kind: 'interaction', root: entry.root, text: entry.text, onClick: entry.onClick },
     }
   }
 
@@ -350,8 +350,15 @@ function refreshInteractHint(): void {
 // The house, and the one scroll you have to go indoors to find.
 const homeWorld = PLANETS.find((p) => p.name === 'home')
 const house = homeWorld ? new House(homeWorld, findBuildSite(homeWorld, groundRadius), groundRadius) : null
+let residentSpeaking = false
 if (house) {
   scene.add(house.group)
+  if (house.resident) {
+    bindInteraction(house.resident, undefined, () => {
+      residentSpeaking = true
+      hud.sayTyped('Hi my love. You made it. Its been a long journey, and I hope you can see how much I love you. Love -Soren')
+    })
+  }
   const key = items.find((i) => i.planet.name === 'home')
   if (key) {
     key.position.copy(house.interior)
@@ -604,14 +611,21 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
   }
 
   const target = pickTarget(pointerNdc)
-  if (!target) return
+  if (!target) {
+    residentSpeaking = false
+    hud.dismissToast()
+    return
+  }
   if (target.kind === 'scroll') {
+    residentSpeaking = false
     target.item.collected = true
     target.item.object.visible = false
     hud.announce(target.item)
     refreshInteractHint()
     return
   }
+  const clickedResident = !!house?.resident && target.root === house.resident
+  if (!clickedResident) residentSpeaking = false
   target.onClick?.()
   if (target.text) hud.say(target.text)
 })
@@ -791,6 +805,8 @@ function frame(): void {
   if (house) {
     indoorsLatched = indoorsLatched ? house.contains(player.pos, 0.55) : house.contains(player.pos)
     house.roof.visible = !indoorsLatched
+    if (residentSpeaking) house.lookResidentAt(player.pos, dt)
+    else house.resetResidentLook(dt)
   } else {
     indoorsLatched = false
   }

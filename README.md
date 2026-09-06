@@ -1,4 +1,5 @@
-# sphere-game
+# levs-solar-system
+
 
 A Three.js game, built with Vite + TypeScript.
 
@@ -20,4 +21,4 @@ npm run check    # type-check only
 ```
 ## Website
 
-https://sorenantebi.github.io/sphere-game/
+https://sorenantebi.github.io/levs-solar-system/

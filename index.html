@@ -27,7 +27,7 @@
       #hud.faded { opacity: 0.18; }
       #hud b { color: #ffd9a8; font-weight: 600; }
 
-      /* Per-planet panel: whichever world you're standing on, and its keepsake. */
+      /* Per-planet panel: whichever world you're standing on, and its scroll. */
       #planet-panel {
         position: fixed;
         top: 24px;
@@ -79,19 +79,338 @@
 
       #toast {
         position: fixed;
-        top: 34px;
+        top: 62px;
         left: 50%;
         transform: translateX(-50%) translateY(-12px);
-        font: 15px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-        letter-spacing: 0.08em;
-        padding: 12px 22px;
-        border-radius: 10px;
-        background: rgba(16, 13, 38, 0.7);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        width: max-content;
+        max-width: 96vw;
+        font: 22px/1.32 ui-monospace, SFMono-Regular, Menlo, monospace;
+        letter-spacing: 0.02em;
+        color: #2e2419;
+        padding: 56px 90px 52px;
+        border-radius: 0;
+        border: 0;
+        background: url('/src/images/parchment_transparent.png') center / 100% 100% no-repeat;
+        filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.35));
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.45s ease, transform 0.45s ease;
       }
       #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+      #toast .toast-text {
+        display: block;
+        width: max-content;
+        max-width: min(72vw, 30ch);
+        text-align: center;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: normal;
+      }
+
+      #aim-dot {
+        position: fixed;
+        width: 10px;
+        height: 10px;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        background: #ffe3b8;
+        border: 1px solid rgba(12, 13, 26, 0.9);
+        box-shadow: 0 0 0 2px rgba(255, 227, 184, 0.24);
+        pointer-events: none;
+        z-index: 12;
+        opacity: 0.95;
+        transition: opacity 0.12s ease;
+      }
+      #aim-dot.hidden { opacity: 0; }
+
+      #interact-hint {
+        position: fixed;
+        left: 50%;
+        top: 22px;
+        transform: translateX(-50%);
+        font: 14px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+        letter-spacing: 0.05em;
+        color: #bcdfff;
+        background: rgba(16, 13, 38, 0.72);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        padding: 5px 10px;
+        pointer-events: none;
+        z-index: 12;
+        opacity: 0;
+        transition: opacity 0.12s ease;
+      }
+      #interact-hint.on { opacity: 1; }
+
+      #sound-toggle {
+        position: fixed;
+        top: 24px;
+        right: 24px;
+        z-index: 13;
+        pointer-events: auto;
+        padding: 8px 12px;
+        border-radius: 9px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(16, 13, 38, 0.78);
+        color: #e6e9fb;
+        font: 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        cursor: pointer;
+        backdrop-filter: blur(6px);
+        transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+      }
+      #sound-toggle:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0 12px rgba(255, 227, 184, 0.2);
+        border-color: rgba(255, 227, 184, 0.45);
+      }
+
+      #album-hint {
+        position: fixed;
+        left: 50%;
+        bottom: 94px;
+        transform: translateX(-50%);
+        font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+        letter-spacing: 0.05em;
+        color: #ffe9bf;
+        background: rgba(19, 15, 37, 0.72);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 8px 14px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+      #album-hint.on { opacity: 1; }
+
+      /* The shelf of scrolls you've found. */
+      #planet-panel .shelf {
+        display: flex;
+        gap: 7px;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      #planet-panel .shelf.nudge { animation: nudge 0.9s ease; }
+      @keyframes nudge {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-3px); }
+        75% { transform: translateX(3px); }
+      }
+      .scroll-button {
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 4px;
+        background: #241f47;
+        cursor: pointer;
+        pointer-events: auto;
+        position: relative;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      .scroll-button::after {
+        content: '';
+        position: absolute;
+        inset: 4px;
+        border-radius: 2px;
+        background: var(--ink);
+        opacity: 0.22;
+      }
+      .scroll-button:disabled { cursor: default; opacity: 0.45; }
+      .scroll-button:not(:disabled)::after { opacity: 1; }
+      .scroll-button:not(:disabled):hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 10px var(--ink);
+      }
+
+      /* The journal: plain white paper, in the same monospace the rest of
+         the interface uses. */
+      #journal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(8, 7, 20, 0.5);
+        backdrop-filter: blur(3px);
+        z-index: 10;
+      }
+      #journal.on { display: flex; }
+
+      #journal .paper {
+        width: min(520px, 82vw);
+        max-height: 76vh;
+        overflow-y: auto;
+        padding: 24px 28px 20px;
+        background: #ffffff;
+        color: #22232a;
+        border-radius: 4px;
+        box-shadow: 0 20px 64px rgba(0, 0, 0, 0.55);
+        font: 13px/1.7 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      #journal .paper-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font-size: 12px;
+        color: #6b6f7d;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e4e6ec;
+      }
+      #journal .paper-count { letter-spacing: 0.06em; }
+
+      #journal .paper-list { display: block; }
+      #journal .paper.reading .paper-list { display: none; }
+      #journal .paper-read { display: none; }
+      #journal .paper.reading .paper-read { display: block; }
+
+      #journal .entry {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 9px 6px;
+        margin: 0;
+        text-align: left;
+        font: inherit;
+        color: #a6aab5;
+        background: none;
+        border: 0;
+        border-bottom: 1px solid #f0f1f5;
+        cursor: default;
+        pointer-events: auto;
+      }
+      #journal .entry.found { color: #22232a; cursor: pointer; }
+      #journal .entry.found:hover { background: #f5f6f9; }
+      #journal .entry-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 2px;
+        flex: none;
+        background: var(--ink);
+        opacity: 0.25;
+      }
+      #journal .entry.found .entry-dot { opacity: 1; }
+      #journal .entry-where { min-width: 74px; letter-spacing: 0.04em; }
+      #journal .entry-what { color: #8b8f9b; }
+      #journal .entry.found .entry-what { color: #4a4e5a; }
+
+      #journal .read-title {
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-size: 12px;
+        color: #6b6f7d;
+        margin: 14px 0 14px;
+      }
+      #journal .read-body { font-size: 14px; line-height: 1.85; }
+      #journal .read-body p { margin: 0 0 14px; }
+      #journal .read-body p:last-child { margin-bottom: 0; }
+
+      #journal .paper-foot {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 18px;
+        padding-top: 14px;
+        border-top: 1px solid #e4e6ec;
+      }
+      #journal .paper-action {
+        padding: 6px 14px;
+        font: 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        letter-spacing: 0.06em;
+        color: #5a5e6a;
+        background: #f4f5f8;
+        border: 1px solid #dfe1e8;
+        border-radius: 3px;
+        cursor: pointer;
+        pointer-events: auto;
+      }
+      #journal .paper-action:hover { background: #e9ebf1; color: #22232a; }
+      #journal .paper-read .paper-action { margin-top: 18px; }
+
+      #album-viewer {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(6, 5, 16, 0.64);
+        backdrop-filter: blur(3px);
+        z-index: 11;
+      }
+      #album-viewer.on { display: flex; }
+
+      #album-viewer .album-card {
+        width: min(720px, 88vw);
+        max-height: 82vh;
+        overflow: auto;
+        padding: 18px;
+        border-radius: 12px;
+        background: #f8f1e3;
+        color: #2b2222;
+        border: 1px solid #ddcfae;
+        box-shadow: 0 22px 62px rgba(0, 0, 0, 0.52);
+        font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      #album-viewer .album-title {
+        text-transform: uppercase;
+        letter-spacing: 0.11em;
+        font-size: 12px;
+        color: #614a39;
+        margin-bottom: 10px;
+      }
+      #album-viewer .album-image {
+        width: 100%;
+        height: min(54vh, 420px);
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid #ccb994;
+        background: repeating-linear-gradient(
+          -45deg,
+          #eadcc2,
+          #eadcc2 12px,
+          #efe6d3 12px,
+          #efe6d3 24px
+        );
+      }
+      #album-viewer .album-index {
+        margin-top: 10px;
+        color: #694f37;
+        letter-spacing: 0.06em;
+      }
+      #album-viewer .album-path {
+        margin-top: 4px;
+        color: #7a6148;
+        font-size: 12px;
+        word-break: break-all;
+      }
+      #album-viewer .album-controls {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      #album-viewer .album-action {
+        padding: 7px 12px;
+        border-radius: 6px;
+        border: 1px solid #cfbb96;
+        background: #f0e2c5;
+        color: #493827;
+        font: 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+        letter-spacing: 0.06em;
+        cursor: pointer;
+      }
+      #album-viewer .album-action:hover { background: #e8d5b1; }
 
       /* Press P. Numbers from your own GPU, not from a guess. */
       #perf {
@@ -113,7 +432,7 @@
   <body>
     <div id="hud">
       <b>click</b> to look around &nbsp;·&nbsp; <b>WASD</b> walk &nbsp;·&nbsp;
-      <b>space</b> jump (hold to leap further) &nbsp;·&nbsp; <b>R</b> reset &nbsp;·&nbsp; <b>P</b> stats
+      <b>space</b> jump (hold to leap further) &nbsp;·&nbsp; <b>F</b> album &nbsp;·&nbsp; <b>R</b> reset &nbsp;·&nbsp; <b>E</b> scrolls &nbsp;·&nbsp; <b>P</b> stats
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

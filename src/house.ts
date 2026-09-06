@@ -28,6 +28,8 @@ const DOOR_W = 1.8
 const DOOR_H = 2.4
 /** How far the walls continue under the floor line, to bury the curvature. */
 const FOOTING = 1.4
+/** Keep the shell on the sampled ground; steps handle the outside drop. */
+const HOUSE_SINK = 0
 
 const HALF_W = WIDTH / 2
 const HALF_D = DEPTH / 2
@@ -51,8 +53,8 @@ const SOLIDS: Box[] = [
   // Lintel over the door. The gap below it runs all the way down, so the
   // doorway stays walkable wherever the ground happens to sit.
   { min: [-DOOR_W / 2, DOOR_H, INNER], max: [DOOR_W / 2, HEIGHT, HALF_D] },
-  // Ceiling, so you can't jump out through the roof.
-  { min: [-HALF_W, HEIGHT, -HALF_D], max: [HALF_W, HEIGHT + 0.3, HALF_D] },
+  // Ceiling collider, intentionally thick to prevent tunnelling on jumps.
+  { min: [-HALF_W, HEIGHT, -HALF_D], max: [HALF_W, HEIGHT + 2.0, HALF_D] },
   // The desk, so you walk round it rather than through it.
   { min: [-1.1, 0, -2.5], max: [1.1, 0.62, -1.6] },
 ]
@@ -221,7 +223,7 @@ export class House {
     up: THREE.Vector3,
     groundRadius: (p: Planet, d: THREE.Vector3) => number,
   ) {
-    const base = up.clone().multiplyScalar(groundRadius(planet, up)).add(planet.center)
+    const base = up.clone().multiplyScalar(groundRadius(planet, up) - HOUSE_SINK).add(planet.center)
 
     // Stand it upright on the planet, facing an arbitrary tangent.
     const forward = new THREE.Vector3(0, 0, 1).addScaledVector(up, -up.z)
@@ -314,7 +316,9 @@ export class House {
         // On the front face, anything below the lintel has to stop either side
         // of the doorway — a full-width rail runs straight through the opening.
         if (sz === 1 && y < DOOR_H) {
-          const segment = HALF_W - DOOR_W / 2
+          // Leave a real air gap to avoid edge shimmer with doorway trim.
+          const edgeGap = 0.08
+          const segment = HALF_W - DOOR_W / 2 - edgeGap
           for (const sx of [-1, 1]) {
             this.group.add(
               box(
@@ -322,7 +326,7 @@ export class House {
                 0.22,
                 0.16,
                 mats.beam,
-                sx * (DOOR_W / 2 + segment / 2),
+                sx * (DOOR_W / 2 + edgeGap + segment / 2),
                 y,
                 sz * (HALF_D - 0.03),
               ),
@@ -348,18 +352,19 @@ export class House {
   }
 
   private buildDoorway(mats: Palette): void {
-    // Set proud of the wall rather than flush — coplanar faces z-fight.
-    const z = HALF_D + 0.07
+    // Keep doorway trim clearly in front of the wall to avoid overlap flicker.
+    const z = HALF_D + 0.18
     for (const side of [-1, 1]) {
+      const postMat = mats.plaster
       this.group.add(
-        box(0.22, DOOR_H + 0.9, 0.2, mats.beam, side * (DOOR_W / 2 + 0.11), DOOR_H / 2 - 0.45, z),
+        box(0.22, DOOR_H + 0.9, 0.2, postMat, side * (DOOR_W / 2 + 0.11), DOOR_H / 2 - 0.45, z),
       )
     }
     this.group.add(box(DOOR_W + 0.5, 0.26, 0.24, mats.beam, 0, DOOR_H + 0.13, z))
 
     // The door itself, standing open against the inner wall.
     const door = new THREE.Group()
-    door.position.set(-DOOR_W / 2, 0, HALF_D - WALL / 2)
+    door.position.set(-DOOR_W / 2, 0, HALF_D - WALL / 2 + 0.06)
     door.rotation.y = -1.9
     const slab = box(DOOR_W, DOOR_H - 0.06, 0.09, mats.timber, DOOR_W / 2, (DOOR_H - 0.06) / 2, 0)
     door.add(slab)
@@ -371,12 +376,14 @@ export class House {
     door.add(knob)
     this.group.add(door)
 
-    // Threshold slab and a step down to the ground.
-    this.group.add(box(DOOR_W + 0.6, 0.12, 0.7, mats.stone, 0, 0.02, HALF_D + 0.2))
-    this.group.add(box(DOOR_W + 0.9, 0.14, 0.5, mats.stone, 0, -0.14, HALF_D + 0.62))
+    // Threshold slab and deeper steps down to the ground.
+    this.group.add(box(DOOR_W + 0.6, 0.12, 0.78, mats.stone, 0, 0.02, HALF_D + 0.22))
+    this.group.add(box(DOOR_W + 0.95, 0.22, 0.68, mats.stone, 0, -0.24, HALF_D + 0.67))
+    this.group.add(box(DOOR_W + 1.28, 0.24, 0.62, mats.stone, 0, -0.58, HALF_D + 1.07))
+    this.group.add(box(DOOR_W + 1.58, 0.26, 0.58, mats.stone, 0, -0.96, HALF_D + 1.49))
 
     // A lantern by the door.
-    const bracket = box(0.08, 0.08, 0.36, mats.beam, DOOR_W / 2 + 0.5, 2.15, HALF_D + 0.16)
+    const bracket = box(0.08, 0.08, 0.36, mats.beam, DOOR_W / 2 + 0.5, 2.15, z + 0.09)
     this.group.add(bracket)
     const lamp = new THREE.Mesh(
       new THREE.SphereGeometry(0.13, 14, 12),
@@ -386,7 +393,7 @@ export class House {
         emissiveIntensity: 1.8,
       }),
     )
-    lamp.position.set(DOOR_W / 2 + 0.5, 2.02, HALF_D + 0.3)
+    lamp.position.set(DOOR_W / 2 + 0.5, 2.02, z + 0.23)
     this.group.add(lamp)
   }
 
@@ -481,14 +488,25 @@ export class House {
   }
 
   /** True when the player is standing in the room. */
-  contains(worldPos: THREE.Vector3): boolean {
+  contains(worldPos: THREE.Vector3, margin = 0): boolean {
     _local.copy(worldPos).applyMatrix4(this.toLocal)
-    return (
-      Math.abs(_local.x) < INNER &&
-      Math.abs(_local.z) < INNER &&
-      _local.y > -1.5 &&
-      _local.y < HEIGHT
-    )
+
+    const inRoom =
+      Math.abs(_local.x) < INNER + margin &&
+      Math.abs(_local.z) < INNER + margin &&
+      _local.y > -1.5 - margin &&
+      _local.y < HEIGHT + 0.35 + margin
+
+    // Include the doorway tunnel so roof visibility/camera do not flicker
+    // while crossing the threshold.
+    const inDoorway =
+      Math.abs(_local.x) < DOOR_W / 2 + 0.35 + margin &&
+      _local.z > INNER - 0.35 - margin &&
+      _local.z < HALF_D + 0.8 + margin &&
+      _local.y > -1.5 - margin &&
+      _local.y < HEIGHT + 0.35 + margin
+
+    return inRoom || inDoorway
   }
 
   /**
@@ -522,13 +540,26 @@ export class House {
   /** Height of the floorboards here, as a distance from the planet's core. */
   floorAt(pos: THREE.Vector3, planetCentre: THREE.Vector3): number {
     this.floorProbe.copy(pos).applyMatrix4(this.toLocal)
-    // Reaches through the doorway too, so crossing the threshold is one step
-    // rather than a stumble on and off the boards.
-    if (Math.abs(this.floorProbe.x) > INNER) return 0
-    if (this.floorProbe.z < -INNER || this.floorProbe.z > HALF_D) return 0
-    if (this.floorProbe.y < -1.2 || this.floorProbe.y > HEIGHT) return 0
+    const x = Math.abs(this.floorProbe.x)
+    const z = this.floorProbe.z
+    const y = this.floorProbe.y
+    if (y < -1.25 || y > HEIGHT + 0.35) return 0
 
-    this.floorProbe.y = 0
+    let floorY: number | null = null
+
+    // Room floor.
+    if (x <= INNER && z >= -INNER && z <= HALF_D) floorY = 0
+
+    // Doorway threshold and exterior steps; these are handled as floor levels
+    // so movement reads as climbing instead of colliding into blocks.
+    if (x <= (DOOR_W + 0.6) / 2 && z >= HALF_D - 0.17 && z <= HALF_D + 0.61) floorY = Math.max(floorY ?? -Infinity, 0.08)
+    if (x <= (DOOR_W + 0.95) / 2 && z >= HALF_D + 0.33 && z <= HALF_D + 1.01) floorY = Math.max(floorY ?? -Infinity, -0.13)
+    if (x <= (DOOR_W + 1.28) / 2 && z >= HALF_D + 0.76 && z <= HALF_D + 1.38) floorY = Math.max(floorY ?? -Infinity, -0.46)
+    if (x <= (DOOR_W + 1.58) / 2 && z >= HALF_D + 1.2 && z <= HALF_D + 1.78) floorY = Math.max(floorY ?? -Infinity, -0.83)
+
+    if (floorY === null) return 0
+
+    this.floorProbe.y = floorY
     this.floorProbe.applyMatrix4(this.toWorld)
     return this.floorProbe.distanceTo(planetCentre)
   }
@@ -544,7 +575,7 @@ export class House {
 
     // Cheap reject: nowhere near the building.
     if (Math.abs(_centre.x) > HALF_W + 1 || Math.abs(_centre.z) > HALF_D + 1) return
-    if (_centre.y < -FOOTING - 1 || _centre.y > HEIGHT + 2) return
+    if (_centre.y < -FOOTING - 1 || _centre.y > HEIGHT + 6) return
 
     let moved = false
     for (const b of SOLIDS) {

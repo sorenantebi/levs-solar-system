@@ -37,7 +37,7 @@ export class FollowCamera {
   private distance = CAM_DISTANCE
 
   constructor(aspect: number) {
-    this.camera = new THREE.PerspectiveCamera(58, aspect, 0.1, 400)
+    this.camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 400)
     this.camera.up.copy(this.up)
   }
 

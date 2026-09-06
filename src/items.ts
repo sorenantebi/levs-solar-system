@@ -1,187 +1,77 @@
 import * as THREE from 'three'
 import { Planet, PLANETS } from './planets'
+import { SCROLLS, ScrollText } from './scrolls'
 import { terrainAt } from './texture'
 import { ITEM_BOB, ITEM_HOVER, ITEM_PICKUP_RADIUS, ITEM_SPIN } from './tuning'
 
+const MINECRAFT_CHEST_DIR = new THREE.Vector3(-0.34, 0.88, 0.32).normalize()
+
 /**
- * One keepsake per world, sitting on dry land, waiting to be walked into.
+ * One scroll per planet, lying somewhere on dry land, waiting to be walked
+ * into. Deliberately small — finding it is the point.
  *
- * Each is assembled from a handful of primitives — same approach as the
- * character, for the same reason: no assets to source, and the shapes stay
- * readable at the size they're actually seen.
+ * The words are in scrolls.ts; this file is only about the object and where
+ * it sits.
  */
 
 export interface Collectible {
   planet: Planet
-  /** Shown in the planet's panel. */
-  label: string
-  name: string
-  colour: number
+  scroll: ScrollText
   object: THREE.Object3D
   position: THREE.Vector3
   up: THREE.Vector3
   collected: boolean
 }
 
-interface ItemSpec {
-  planet: string
-  label: string
-  name: string
-  colour: number
-  build: (colour: number) => THREE.Object3D
-}
-
-function glowing(colour: number, emissive = 0.55): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({
+/**
+ * A rolled-up scroll: a tube of parchment with thicker ends, tied with a
+ * ribbon in the planet's own colour so each one is recognisable.
+ */
+function buildScroll(colour: number): THREE.Object3D {
+  const scroll = new THREE.Group()
+  const parchment = new THREE.MeshStandardMaterial({
+    color: 0xf3e4c0,
+    emissive: 0xd8c79a,
+    emissiveIntensity: 0.35,
+    roughness: 0.85,
+  })
+  const cap = new THREE.MeshStandardMaterial({ color: 0xdcc79c, roughness: 0.8 })
+  const ribbon = new THREE.MeshStandardMaterial({
     color: colour,
     emissive: colour,
-    emissiveIntensity: emissive,
-    roughness: 0.35,
-    metalness: 0.1,
+    emissiveIntensity: 0.5,
+    roughness: 0.7,
   })
-}
 
-function gem(colour: number, scaleY: number): THREE.Object3D {
-  const group = new THREE.Group()
-  const body = new THREE.Mesh(new THREE.OctahedronGeometry(0.3, 0), glowing(colour))
-  body.scale.set(1, scaleY, 1)
-  group.add(body)
-  return group
-}
+  const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.062, 0.3, 14), parchment)
+  tube.rotation.z = Math.PI / 2
+  scroll.add(tube)
 
-const ITEMS: ItemSpec[] = [
-  {
-    planet: 'home',
-    label: 'Home',
-    name: 'the rose',
-    colour: 0xff5f7e,
-    build: (colour) => {
-      const group = new THREE.Group()
-      const stem = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.035, 0.045, 0.5, 8),
-        new THREE.MeshStandardMaterial({ color: 0x4f9d54, roughness: 0.8 }),
-      )
-      stem.position.y = 0.25
-      const bloom = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 12), glowing(colour, 0.35))
-      bloom.position.y = 0.56
-      for (const angle of [0, 2.1, 4.2]) {
-        const petal = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), glowing(colour, 0.3))
-        petal.position.set(Math.cos(angle) * 0.14, 0.52, Math.sin(angle) * 0.14)
-        petal.scale.set(1, 0.7, 1)
-        group.add(petal)
-      }
-      group.add(stem, bloom)
-      return group
-    },
-  },
-  {
-    planet: 'coral',
-    label: 'Coral',
-    name: 'the lantern',
-    colour: 0xffcf6a,
-    build: (colour) => {
-      const group = new THREE.Group()
-      const frame = new THREE.MeshStandardMaterial({ color: 0x6b4a3a, roughness: 0.7 })
-      const cage = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.34, 8, 1, true), frame)
-      cage.position.y = 0.34
-      const cap = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.16, 8), frame)
-      cap.position.y = 0.59
-      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.07, 8), frame)
-      base.position.y = 0.15
-      const flame = new THREE.Mesh(new THREE.SphereGeometry(0.12, 14, 10), glowing(colour, 1.4))
-      flame.position.y = 0.34
-      group.add(cage, cap, base, flame)
-      return group
-    },
-  },
-  {
-    planet: 'sky',
-    label: 'Sky',
-    name: 'the star',
-    colour: 0xffe066,
-    build: (colour) => {
-      const group = new THREE.Group()
-      const a = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), glowing(colour, 1.1))
-      a.scale.set(1, 1.5, 1)
-      const b = a.clone()
-      b.rotation.z = Math.PI / 2
-      group.add(a, b)
-      group.position.y = 0.1
-      return group
-    },
-  },
-  {
-    planet: 'lilac',
-    label: 'Lilac',
-    name: 'the crystal',
-    colour: 0xc79bff,
-    build: (colour) => {
-      const group = gem(colour, 1.9)
-      group.position.y = 0.34
-      return group
-    },
-  },
-  {
-    planet: 'lagoon',
-    label: 'Lagoon',
-    name: 'the pearl',
-    colour: 0xfff0f5,
-    build: (colour) => {
-      const group = new THREE.Group()
-      const pearl = new THREE.Mesh(new THREE.SphereGeometry(0.19, 20, 16), glowing(colour, 0.5))
-      pearl.position.y = 0.3
-      const shell = new THREE.Mesh(
-        new THREE.SphereGeometry(0.3, 18, 12, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5),
-        new THREE.MeshStandardMaterial({ color: 0xf0b8c8, roughness: 0.5, side: THREE.DoubleSide }),
-      )
-      shell.position.y = 0.28
-      shell.rotation.x = Math.PI
-      group.add(shell, pearl)
-      return group
-    },
-  },
-  {
-    planet: 'meadow',
-    label: 'Meadow',
-    name: 'the little key',
-    colour: 0xffd479,
-    build: (colour) => {
-      const group = new THREE.Group()
-      const metal = glowing(colour, 0.5)
-      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.46, 8), metal)
-      shaft.position.y = 0.32
-      shaft.rotation.z = Math.PI / 2
-      const bow = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.032, 8, 16), metal)
-      bow.position.set(-0.31, 0.32, 0)
-      bow.rotation.y = Math.PI / 2
-      group.add(shaft, bow)
-      for (const x of [0.12, 0.2]) {
-        const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.11, 0.04), metal)
-        tooth.position.set(x, 0.26, 0)
-        group.add(tooth)
-      }
-      return group
-    },
-  },
-  {
-    planet: 'blocks',
-    label: 'Blocks',
-    name: 'the diamond',
-    colour: 0x5ce6e0,
-    build: (colour) => {
-      const group = gem(colour, 1.35)
-      group.position.y = 0.34
-      return group
-    },
-  },
-]
+  for (const side of [-1, 1]) {
+    const end = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.035, 14), cap)
+    end.rotation.z = Math.PI / 2
+    end.position.x = side * 0.155
+    scroll.add(end)
+  }
+
+  const tie = new THREE.Mesh(new THREE.TorusGeometry(0.066, 0.016, 8, 16), ribbon)
+  tie.rotation.y = Math.PI / 2
+  scroll.add(tie)
+
+  scroll.traverse((o) => {
+    if (o instanceof THREE.Mesh) o.castShadow = true
+  })
+  return scroll
+}
 
 /**
  * Pick a spot on dry land. Deterministic — walks a Fibonacci spiral from an
- * offset derived from the planet's own seed — so the keepsake is in the same
+ * offset derived from the planet's own seed — so the scroll is in the same
  * place every run rather than moving between reloads.
  */
 function findSpot(p: Planet, groundRadius: (p: Planet, dir: THREE.Vector3) => number): THREE.Vector3 {
+  if (p.name === 'minecraft') return MINECRAFT_CHEST_DIR.clone()
+
   const total = 2000
   const start = p.skin.seed % total
   const dir = new THREE.Vector3()
@@ -193,11 +83,10 @@ function findSpot(p: Planet, groundRadius: (p: Planet, dir: THREE.Vector3) => nu
     const theta = i * Math.PI * (3 - Math.sqrt(5))
     dir.set(Math.cos(theta) * r, y, Math.sin(theta) * r).normalize()
 
-    // Solid ground, not the shore ramp — otherwise a keepsake can end up on a
+    // Solid ground, not the shore ramp — otherwise a scroll can end up on a
     // sliver of beach barely above the waterline, half-buried in the coast.
     if (terrainAt(p.skin, p.noiseScale, dir.x, dir.y, dir.z) < 0.5) continue
-    // On a water world the land has to clear the waterline, or the keepsake
-    // ends up submerged on a shoal.
+    // On a water world the land has to clear the waterline too.
     if (p.water > 0 && groundRadius(p, dir) <= p.radius + p.water + 0.25) continue
     return dir.clone()
   }
@@ -213,14 +102,17 @@ export function buildCollectibles(
   const right = new THREE.Vector3()
   const forward = new THREE.Vector3()
 
-  for (const spec of ITEMS) {
-    const planet = PLANETS.find((p) => p.name === spec.planet)
+  for (const scroll of SCROLLS) {
+    const planet = PLANETS.find((p) => p.name === scroll.planet)
     if (!planet) continue
 
     const up = findSpot(planet, groundRadius)
-    const position = up.clone().multiplyScalar(groundRadius(planet, up) + ITEM_HOVER).add(planet.center)
+    const position = up
+      .clone()
+      .multiplyScalar(groundRadius(planet, up) + ITEM_HOVER)
+      .add(planet.center)
 
-    const object = spec.build(spec.colour)
+    const object = buildScroll(scroll.colour)
     // Stand it up relative to its own planet, not the world.
     forward.set(0, 0, 1).addScaledVector(up, -up.z)
     if (forward.lengthSq() < 1e-6) forward.set(1, 0, 0).addScaledVector(up, -up.x)
@@ -232,27 +124,15 @@ export function buildCollectibles(
     holder.position.copy(position)
     holder.quaternion.setFromRotationMatrix(basis)
     holder.add(object)
-    object.traverse((o) => {
-      if (o instanceof THREE.Mesh) o.castShadow = true
-    })
     scene.add(holder)
 
-    out.push({
-      planet,
-      label: spec.label,
-      name: spec.name,
-      colour: spec.colour,
-      object: holder,
-      position,
-      up,
-      collected: false,
-    })
+    out.push({ planet, scroll, object: holder, position, up, collected: false })
   }
 
   return out
 }
 
-/** Idle spin and hover, so a keepsake reads as something to walk into. */
+/** Idle spin and hover, so a scroll reads as something to walk into. */
 export function animateCollectibles(items: Collectible[], elapsed: number): void {
   for (const item of items) {
     if (item.collected) continue
@@ -262,7 +142,7 @@ export function animateCollectibles(items: Collectible[], elapsed: number): void
   }
 }
 
-/** Returns the item just picked up, or null. */
+/** Returns the scroll just picked up, or null. */
 export function tryCollect(
   items: Collectible[],
   playerPos: THREE.Vector3,

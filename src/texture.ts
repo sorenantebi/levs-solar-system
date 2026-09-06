@@ -109,10 +109,17 @@ export interface PlanetSkin {
    * a level area big enough to put a building on.
    */
   island?: { dir: [number, number, number]; extent: number }
+  /** Optional white overlay on top of normal terrain, used for one bright island. */
+  whitePatch?: { dir: [number, number, number]; extent: number }
+  /**
+   * Three colours swirled together instead of terrain shading. A planet with
+   * this is a plain painted sphere — no land, no sea, no heightfield.
+   */
+  swirl?: [number, number, number]
 }
 
 /** Fraction of the island's radius given over to the sloped shore. */
-const ISLAND_SHORE = 0.18
+const ISLAND_SHORE = 0.22
 
 export interface TerrainSample {
   /** Height above sea level, 0..1 of the planet's relief. */
@@ -121,6 +128,8 @@ export interface TerrainSample {
   field: number
   /** Position within the land band, for picking a colour tier. */
   band: number
+  /** Extra flag for special terrain, such as a white island. */
+  snow: number
 }
 
 /**
@@ -163,25 +172,41 @@ export function terrainSample(
     const cos = Math.max(-1, Math.min(1, (x * ix + y * iy + z * iz) / len))
     const angle = Math.acos(cos)
 
-    // Wobble the coastline so the island isn't a drawn circle.
+    // Wobble the coastline so the island isn't a drawn circle. Kept modest:
+    // a deep bite out of one side can pull the flat top in below the house's
+    // own footprint.
     const wobble = fbm(x * 2.6, y * 2.6, z * 2.6, skin.seed) - 0.5
-    const edge = skin.island.extent * (1 + wobble * 0.34)
+    const edge = skin.island.extent * (1 + wobble * 0.25)
     const ramp = skin.island.extent * ISLAND_SHORE
 
     const t = (edge - angle) / ramp
     if (t <= 0) {
-      return { height: 0, field: clamp01(0.5 + (edge - angle) * 1.6), band: 0 }
+      return { height: 0, field: clamp01(0.5 + (edge - angle) * 1.6), band: 0, snow: 0 }
     }
     const rise = smoothstep(0, 1, Math.min(1, t))
-    return { height: rise, field: clamp01(0.5 + (edge - angle) * 1.6), band: Math.min(1, t) }
+    return {
+      height: rise,
+      field: clamp01(0.5 + (edge - angle) * 1.6),
+      band: Math.min(1, t),
+      snow: 0,
+    }
   }
 
   const h = fbm(x * scale, y * scale, z * scale, skin.seed)
   const band = clamp01((h - skin.seaLevel) / LAND_RANGE)
+  let snow = 0
+  if (skin.whitePatch && h > skin.seaLevel) {
+    const [wx, wy, wz] = skin.whitePatch.dir
+    const len = Math.hypot(wx, wy, wz) || 1
+    const cos = Math.max(-1, Math.min(1, (x * wx + y * wy + z * wz) / len))
+    const angle = Math.acos(cos)
+    if (angle <= skin.whitePatch.extent) snow = 1
+  }
   return {
     height: h <= skin.seaLevel ? 0 : landProfile(band),
     field: clamp01(0.5 + (h - skin.seaLevel) * SHORE_SLOPE),
     band,
+    snow,
   }
 }
 
@@ -281,7 +306,7 @@ export function makeTerrainTexture(
       const i = (py * DATA_W + px) * 4
       data[i] = sample.field * 255
       data[i + 1] = sample.band * 255
-      data[i + 2] = 0
+      data[i + 2] = sample.snow * 255
       data[i + 3] = 255
     }
   }

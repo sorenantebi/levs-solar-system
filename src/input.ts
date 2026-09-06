@@ -6,11 +6,16 @@ export class Input {
   jumpHeld = false
   /** True for the single frame jump was pressed. */
   jumpPressed = false
+  /** True for the single frame interact was pressed. */
+  interactPressed = false
   resetPressed = false
 
   /** Accumulated mouse delta since the last frame, in radians of look. */
   lookX = 0
   lookY = 0
+
+  /** Set while a scroll is open, so reading doesn't walk you off a cliff. */
+  blocked = false
 
   private readonly keys = new Set<string>()
 
@@ -23,6 +28,7 @@ export class Input {
         this.jumpPressed = true
         e.preventDefault()
       }
+      if (k === 'KeyF') this.interactPressed = true
       if (k === 'KeyR') this.resetPressed = true
     })
 
@@ -42,6 +48,16 @@ export class Input {
 
   /** Refresh derived state. Call once at the top of each frame. */
   sample(): void {
+    if (this.blocked) {
+      this.x = 0
+      this.z = 0
+      this.jumpHeld = false
+      this.jumpPressed = false
+      this.interactPressed = false
+      this.lookX = 0
+      this.lookY = 0
+      return
+    }
     const held = (...codes: string[]) => codes.some((c) => this.keys.has(c))
     this.x = (held('KeyD', 'ArrowRight') ? 1 : 0) - (held('KeyA', 'ArrowLeft') ? 1 : 0)
     this.z = (held('KeyW', 'ArrowUp') ? 1 : 0) - (held('KeyS', 'ArrowDown') ? 1 : 0)
@@ -51,6 +67,7 @@ export class Input {
   /** Clear one-frame flags. Call once at the bottom of each frame. */
   endFrame(): void {
     this.jumpPressed = false
+    this.interactPressed = false
     this.resetPressed = false
     this.lookX = 0
     this.lookY = 0

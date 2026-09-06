@@ -73,11 +73,11 @@ export const STEP_SMOOTH_MAX = 0.85
 // --- camera ------------------------------------------------------------
 export const CAM_DISTANCE = 5.5
 /** Pulled in indoors, where the normal distance would sit outside the walls. */
-export const CAM_DISTANCE_INDOOR = 3.4
+export const CAM_DISTANCE_INDOOR = 2.8
 export const CAM_DISTANCE_DAMP = 5
 export const CAM_PITCH_START = 0.34
 export const CAM_PITCH_MIN = -0.35
-export const CAM_PITCH_MAX = 1.25
+export const CAM_PITCH_MAX = 1.45
 export const CAM_TARGET_HEIGHT = 1.0
 export const CAM_POS_DAMP = 9
 export const CAM_UP_DAMP = 5 // how fast the camera's up rolls to match yours
@@ -127,8 +127,24 @@ export const VOXEL_SNOW = 0xf2f6fa
 export const VOXEL_WATER_DEEP = 0x2a5fa8
 export const VOXEL_WATER_SHALLOW = 0x4a92cf
 
-// --- keepsakes ---------------------------------------------------------
-/** How far a keepsake floats above the ground it sits on. */
+// --- scenery -----------------------------------------------------------
+/** How far clouds float above the highest ground. */
+export const CLOUD_HEIGHT = 1.0
+/** Radians per second the cloud layer turns. Slow enough to notice, not watch. */
+export const CLOUD_DRIFT = 0.012
+export const VOXEL_WOOD = 0x7a5533
+export const VOXEL_LEAF = 0x5fa63c
+
+/** How hard the painted planet's bands wind toward its poles. */
+export const SWIRL_TWIST = 2.6
+/**
+ * How many times the colours cycle around the planet. Must be a whole number:
+ * longitude wraps at PI, and a fractional count leaves a visible seam there.
+ */
+export const SWIRL_BANDS = 3
+
+// --- scrolls -----------------------------------------------------------
+/** How far a scroll floats above the ground it sits on. */
 export const ITEM_HOVER = 0.55
 export const ITEM_BOB = 0.09
 export const ITEM_SPIN = 0.9

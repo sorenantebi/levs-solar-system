@@ -197,7 +197,7 @@ const interactHint = document.createElement('div')
 interactHint.id = 'interact-hint'
 document.body.append(interactHint)
 const SCROLL_CLICK_RADIUS = 2.6
-const INTERACT_CLICK_RADIUS = 3.4
+const INTERACT_CLICK_RADIUS = 2.5
 const TARGET_CONE_COS = 0.992
 const ARRAKIS_ROCKY_COLLIDER_DIR = new THREE.Vector3(0.72, 0.45, -0.53).normalize()
 const ARRAKIS_ROCKY_COLLIDER_RADIUS = 1.55
@@ -277,7 +277,11 @@ function pickTarget(ndc: THREE.Vector2): ClickTarget | null {
     }
 
     const target = findInteractionTarget(hit.object)
-    if (target) return { kind: 'interaction', root: target.root, text: target.text, onClick: target.onClick }
+    if (target) {
+      target.root.getWorldPosition(_objPos)
+      if (player.pos.distanceTo(_objPos) > INTERACT_CLICK_RADIUS) continue
+      return { kind: 'interaction', root: target.root, text: target.text, onClick: target.onClick }
+    }
   }
 
   // Slightly forgiving fallback: if you're close and aiming near the target,

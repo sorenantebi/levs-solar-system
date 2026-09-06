@@ -8,6 +8,7 @@ import { animateCollectibles, buildCollectibles } from './items'
 import { SCROLLS } from './scrolls'
 import { buildPlanets, buildStarfield, buildWater, groundRadius, PLANETS } from './planets'
 import { buildScenery, HOME_POKEMON_CLEAR_RADIUS, HOME_POKEMON_DIR } from './scenery'
+import { initLoadingScreen, onEnter, trackDownload } from './loading'
 import { Player, PlayerState } from './player'
 import type { Planet } from './planets'
 import {
@@ -27,6 +28,9 @@ import {
   CAM_DISTANCE_INDOOR,
   WAVE_SPEED,
 } from './tuning'
+
+// Before the first loader starts, so the bar sees every model.
+initLoadingScreen()
 
 const SAVE_KEY = 'sphere-game:player:v2'
 const MUTE_KEY = 'sphere-game:mute:v1'
@@ -91,7 +95,7 @@ sunLoader.load(
     })
     sun.add(model)
   },
-  undefined,
+  trackDownload(SUN_URL),
   (error) => {
     console.error('Failed to load sun model:', error)
   },
@@ -150,6 +154,7 @@ catSpinSfx.preload = 'auto'
 // park the blocked track and flush it on the first click or keypress instead
 // of firing a fresh play() every frame.
 let blockedMusic: HTMLAudioElement | null = null
+let hasEntered = false
 const UNLOCK_EVENTS = ['pointerdown', 'keydown', 'touchstart'] as const
 
 function playMusicFromRandomPoint(track: HTMLAudioElement): void {
@@ -441,7 +446,7 @@ if (house) {
         void catSpinSfx.play()
       })
     },
-    undefined,
+    trackDownload(HOUSE_CAT_URL),
     (error) => {
       console.error('Failed to load house cat model:', error)
     },
@@ -476,7 +481,7 @@ if (house) {
       scene.add(bedHolder)
       bindInteraction(bedHolder, 'eepy... so very eepy...')
     },
-    undefined,
+    trackDownload(HOUSE_BED_URL),
     (error) => {
       console.error('Failed to load house bed model:', error)
     },
@@ -700,6 +705,40 @@ let indoorsLatched = false
 let prevPlanetName = ''
 const clock = new THREE.Clock()
 
+// Called from the frame loop, and again from the loading screen's enter button
+// so the first play() lands inside that click — Safari only lifts its autoplay
+// block for an element whose first play() ran in a gesture handler, and the
+// next frame is already too late.
+function startPendingMusic(): void {
+  if (!hasEntered || !player.grounded) return
+  const currentPlanetName = player.planet.name
+
+  if (currentPlanetName === 'hoenn' && hoennMusicPendingStart) {
+    hoennMusicPendingStart = false
+    playMusicFromRandomPoint(hoennMusic)
+  }
+
+  if (currentPlanetName === 'home' && homeMusicPendingStart) {
+    homeMusicPendingStart = false
+    playMusicFromRandomPoint(homeMusic)
+  }
+
+  if (currentPlanetName === 'lover' && loverMusicPendingStart) {
+    loverMusicPendingStart = false
+    playMusicFromRandomPoint(loverMusic)
+  }
+
+  if (currentPlanetName === 'minecraft' && minecraftMusicPendingStart) {
+    minecraftMusicPendingStart = false
+    playMusicFromRandomPoint(minecraftMusic)
+  }
+
+  if (isJazzPlanet(currentPlanetName) && jazzMusicPendingStart) {
+    jazzMusicPendingStart = false
+    playMusicFromRandomPoint(jazzMusic)
+  }
+}
+
 function frame(): void {
   // Clamped so a backgrounded tab doesn't resume with a giant integration step.
   const dt = Math.min(clock.getDelta(), 1 / 30)
@@ -750,30 +789,7 @@ function frame(): void {
     prevPlanetName = currentPlanetName
   }
 
-  if (currentPlanetName === 'hoenn' && hoennMusicPendingStart && player.grounded) {
-    hoennMusicPendingStart = false
-    playMusicFromRandomPoint(hoennMusic)
-  }
-
-  if (currentPlanetName === 'home' && homeMusicPendingStart && player.grounded) {
-    homeMusicPendingStart = false
-    playMusicFromRandomPoint(homeMusic)
-  }
-
-  if (currentPlanetName === 'lover' && loverMusicPendingStart && player.grounded) {
-    loverMusicPendingStart = false
-    playMusicFromRandomPoint(loverMusic)
-  }
-
-  if (currentPlanetName === 'minecraft' && minecraftMusicPendingStart && player.grounded) {
-    minecraftMusicPendingStart = false
-    playMusicFromRandomPoint(minecraftMusic)
-  }
-
-  if (isJazzPlanet(currentPlanetName) && jazzMusicPendingStart && player.grounded) {
-    jazzMusicPendingStart = false
-    playMusicFromRandomPoint(jazzMusic)
-  }
+  startPendingMusic()
 
   // Indoors the normal boom length would put the camera out in the garden, so
   // pull it in and take the roof off.
@@ -854,5 +870,10 @@ function frame(): void {
   renderer.render(scene, cam.camera)
   requestAnimationFrame(frame)
 }
+
+onEnter(() => {
+  hasEntered = true
+  startPendingMusic()
+})
 
 requestAnimationFrame(frame)

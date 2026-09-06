@@ -427,9 +427,124 @@
         display: none;
       }
       #perf.on { display: block; }
+
+      /* Startup. There is ~80 MB of models behind this, so show where the
+         download has got to rather than a black screen. The enter button is
+         also the click the browser's autoplay policy wants, which is what
+         lets the planet music start on a reload. */
+      #loading {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        background: radial-gradient(circle at 50% 42%, #171b3e 0%, #0a0d1f 64%);
+        font: 13px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: #cdd3f0;
+        letter-spacing: 0.04em;
+        transition: opacity 0.7s ease;
+      }
+      #loading.done { opacity: 0; pointer-events: none; }
+      #loading-title {
+        font-size: 21px;
+        letter-spacing: 0.2em;
+        color: #ffe3b8;
+      }
+      #loading-track {
+        position: relative;
+        width: min(340px, 70vw);
+        height: 30px;
+        border: 3px solid #090d22;
+        border-radius: 999px;
+        background: #191d3f;
+        box-shadow: 0 4px 0 rgba(9, 13, 34, 0.55), inset 0 3px 7px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+      }
+      /* Width rather than scaleX: scaling would squash the barber-pole stripes
+         into a dense smear at the start of the load. */
+      #loading-fill {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 0;
+        border-radius: 999px;
+        background-color: #ffc46b;
+        background-image:
+          linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.6) 0%,
+            rgba(255, 255, 255, 0.14) 46%,
+            rgba(120, 60, 0, 0.14) 100%
+          ),
+          repeating-linear-gradient(
+            -45deg,
+            rgba(255, 255, 255, 0.3) 0 11px,
+            rgba(255, 255, 255, 0) 11px 22px
+          );
+        background-size: 100% 100%, auto;
+        animation: loading-stripes 0.7s linear infinite;
+        transition: width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      /* 22px of stripe period at -45deg is 22/cos(45deg) across, so this is the
+         shortest horizontal shift that lands back on itself without a jump. */
+      @keyframes loading-stripes {
+        from { background-position: 0 0, 0 0; }
+        to { background-position: 0 0, 31.113px 0; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #loading-fill { animation: none; transition: width 0.2s linear; }
+      }
+      #loading-enter {
+        margin-top: 2px;
+        padding: 11px 34px;
+        font: inherit;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        color: #2a1600;
+        background: #ffc46b;
+        border: 3px solid #090d22;
+        border-radius: 999px;
+        box-shadow: 0 5px 0 #090d22;
+        cursor: pointer;
+        opacity: 0;
+        transform: translateY(10px);
+        pointer-events: none;
+        transition: opacity 0.45s ease, transform 0.2s ease, background 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+      #loading-enter.ready {
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+      }
+      #loading-enter:hover { background: #ffd98f; }
+      /* Presses into the page, cartoon-button style. */
+      #loading-enter.ready:active {
+        transform: translateY(5px);
+        box-shadow: 0 0 0 #090d22;
+      }
     </style>
   </head>
   <body>
+    <div id="loading">
+      <div id="loading-title">levs solar system</div>
+      <div
+        id="loading-track"
+        role="progressbar"
+        aria-label="loading"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+      >
+        <div id="loading-fill"></div>
+      </div>
+      <button id="loading-enter" type="button" disabled>enter</button>
+    </div>
     <div id="hud">
       <b>click</b> to look around &nbsp;·&nbsp; <b>WASD</b> walk &nbsp;·&nbsp;
       <b>space</b> jump (hold to leap further) &nbsp;·&nbsp; <b>F</b> album &nbsp;·&nbsp; <b>R</b> reset &nbsp;·&nbsp; <b>E</b> scrolls &nbsp;·&nbsp; <b>P</b> stats

@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { Planet, PLANETS, waterRadius } from './planets'
 import { terrainAt } from './texture'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { trackDownload } from './loading'
 import {
   CLOUD_DRIFT,
   CLOUD_HEIGHT,
@@ -372,7 +373,7 @@ function loadModelOnPlanet(
         mixers.push(mixer)
       }
     },
-    undefined,
+    trackDownload(url),
     (error) => {
       console.error(`Failed to load ${errorLabel} model:`, error)
     },

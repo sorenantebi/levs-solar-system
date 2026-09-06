@@ -200,7 +200,7 @@ const SCROLL_CLICK_RADIUS = 2.6
 const INTERACT_CLICK_RADIUS = 3.4
 const TARGET_CONE_COS = 0.992
 const ARRAKIS_ROCKY_COLLIDER_DIR = new THREE.Vector3(0.72, 0.45, -0.53).normalize()
-const ARRAKIS_ROCKY_COLLIDER_RADIUS = 1.05
+const ARRAKIS_ROCKY_COLLIDER_RADIUS = 1.55
 const _rockyToPlayer = new THREE.Vector3()
 
 for (const item of items) scrollRoots.set(item.object.id, item)

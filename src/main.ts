@@ -143,6 +143,43 @@ jazzMusic.volume = PLANET_MUSIC_VOLUME
 let jazzMusicPendingStart = false
 const catSpinSfx = new Audio(CAT_SPIN_URL)
 catSpinSfx.preload = 'auto'
+
+// Browsers block audio until the page has seen a real user gesture. A first
+// visit can slip through on the browser's media-engagement history, but a
+// reload usually lands back under the policy and play() rejects silently. So
+// park the blocked track and flush it on the first click or keypress instead
+// of firing a fresh play() every frame.
+let blockedMusic: HTMLAudioElement | null = null
+const UNLOCK_EVENTS = ['pointerdown', 'keydown', 'touchstart'] as const
+
+function playMusicFromRandomPoint(track: HTMLAudioElement): void {
+  // Duration is NaN until the metadata lands, and seeking to a random point is
+  // the whole idea, so wait for it rather than always opening on bar one.
+  const seekRandom = (): void => {
+    const duration = track.duration
+    track.currentTime =
+      Number.isFinite(duration) && duration > 0.25 ? Math.random() * (duration - 0.01) : 0
+  }
+  if (Number.isFinite(track.duration)) seekRandom()
+  else track.addEventListener('loadedmetadata', seekRandom, { once: true })
+  void track.play().catch(() => {
+    blockedMusic = track
+  })
+}
+
+function stopMusic(track: HTMLAudioElement): void {
+  track.pause()
+  track.currentTime = 0
+  if (blockedMusic === track) blockedMusic = null
+}
+
+function flushBlockedMusic(): void {
+  const pending = blockedMusic
+  if (!pending) return
+  blockedMusic = null
+  playMusicFromRandomPoint(pending)
+}
+for (const event of UNLOCK_EVENTS) window.addEventListener(event, flushBlockedMusic, true)
 let muted = localStorage.getItem(MUTE_KEY) === '1'
 hoennMusic.muted = muted
 homeMusic.muted = muted
@@ -686,28 +723,23 @@ function frame(): void {
   const currentPlanetName = player.planet.name
   if (currentPlanetName !== prevPlanetName) {
     if (prevPlanetName === 'hoenn') {
-      hoennMusic.pause()
-      hoennMusic.currentTime = 0
+      stopMusic(hoennMusic)
       hoennMusicPendingStart = false
     }
     if (prevPlanetName === 'home') {
-      homeMusic.pause()
-      homeMusic.currentTime = 0
+      stopMusic(homeMusic)
       homeMusicPendingStart = false
     }
     if (prevPlanetName === 'lover') {
-      loverMusic.pause()
-      loverMusic.currentTime = 0
+      stopMusic(loverMusic)
       loverMusicPendingStart = false
     }
     if (prevPlanetName === 'minecraft') {
-      minecraftMusic.pause()
-      minecraftMusic.currentTime = 0
+      stopMusic(minecraftMusic)
       minecraftMusicPendingStart = false
     }
     if (prevPlanetName && isJazzPlanet(prevPlanetName)) {
-      jazzMusic.pause()
-      jazzMusic.currentTime = 0
+      stopMusic(jazzMusic)
       jazzMusicPendingStart = false
     }
     if (currentPlanetName === 'hoenn') hoennMusicPendingStart = true
@@ -719,73 +751,28 @@ function frame(): void {
   }
 
   if (currentPlanetName === 'hoenn' && hoennMusicPendingStart && player.grounded) {
-    const duration = Number.isFinite(hoennMusic.duration) ? hoennMusic.duration : 0
-    const randomStart = duration > 0.25 ? Math.random() * (duration - 0.01) : 0
-    hoennMusic.currentTime = randomStart
-    void hoennMusic.play().then(
-      () => {
-        hoennMusicPendingStart = false
-      },
-      () => {
-        // Browser blocked autoplay; keep pending and retry once user interaction permits.
-      },
-    )
+    hoennMusicPendingStart = false
+    playMusicFromRandomPoint(hoennMusic)
   }
 
   if (currentPlanetName === 'home' && homeMusicPendingStart && player.grounded) {
-    const duration = Number.isFinite(homeMusic.duration) ? homeMusic.duration : 0
-    const randomStart = duration > 0.25 ? Math.random() * (duration - 0.01) : 0
-    homeMusic.currentTime = randomStart
-    void homeMusic.play().then(
-      () => {
-        homeMusicPendingStart = false
-      },
-      () => {
-        // Browser blocked autoplay; keep pending and retry once user interaction permits.
-      },
-    )
+    homeMusicPendingStart = false
+    playMusicFromRandomPoint(homeMusic)
   }
 
   if (currentPlanetName === 'lover' && loverMusicPendingStart && player.grounded) {
-    const duration = Number.isFinite(loverMusic.duration) ? loverMusic.duration : 0
-    const randomStart = duration > 0.25 ? Math.random() * (duration - 0.01) : 0
-    loverMusic.currentTime = randomStart
-    void loverMusic.play().then(
-      () => {
-        loverMusicPendingStart = false
-      },
-      () => {
-        // Browser blocked autoplay; keep pending and retry once user interaction permits.
-      },
-    )
+    loverMusicPendingStart = false
+    playMusicFromRandomPoint(loverMusic)
   }
 
   if (currentPlanetName === 'minecraft' && minecraftMusicPendingStart && player.grounded) {
-    const duration = Number.isFinite(minecraftMusic.duration) ? minecraftMusic.duration : 0
-    const randomStart = duration > 0.25 ? Math.random() * (duration - 0.01) : 0
-    minecraftMusic.currentTime = randomStart
-    void minecraftMusic.play().then(
-      () => {
-        minecraftMusicPendingStart = false
-      },
-      () => {
-        // Browser blocked autoplay; keep pending and retry once user interaction permits.
-      },
-    )
+    minecraftMusicPendingStart = false
+    playMusicFromRandomPoint(minecraftMusic)
   }
 
   if (isJazzPlanet(currentPlanetName) && jazzMusicPendingStart && player.grounded) {
-    const duration = Number.isFinite(jazzMusic.duration) ? jazzMusic.duration : 0
-    const randomStart = duration > 0.25 ? Math.random() * (duration - 0.01) : 0
-    jazzMusic.currentTime = randomStart
-    void jazzMusic.play().then(
-      () => {
-        jazzMusicPendingStart = false
-      },
-      () => {
-        // Browser blocked autoplay; keep pending and retry once user interaction permits.
-      },
-    )
+    jazzMusicPendingStart = false
+    playMusicFromRandomPoint(jazzMusic)
   }
 
   // Indoors the normal boom length would put the camera out in the garden, so

@@ -358,15 +358,15 @@ export class Hud {
     this.shownState = ''
   }
 
-  say(text: string, colour = '#111'): void {
+  say(text: string, colour = '#111', seconds = 1.8): void {
     this.toastText.textContent = text
     this.toast.style.color = colour
     this.toast.classList.add('show')
-    this.toastSticky = true
+    this.toastSticky = false
     this.toastTypeActive = false
     this.toastTypeFull = ''
     this.toastTypePos = 0
-    this.toastTimer = 0
+    this.toastTimer = Math.max(0.4, seconds)
   }
 
   sayTyped(text: string, colour = '#111'): void {

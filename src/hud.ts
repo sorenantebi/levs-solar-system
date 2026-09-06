@@ -52,14 +52,38 @@ export class Hud {
   onReset: (() => void) | null = null
 
   private readonly albums = new Map<string, { title: string; photos: string[] }>([
-    ['start', { title: 'Start Album', photos: ['/photos/start-1.jpg', '/photos/start-2.jpg'] }],
-    ['arrakis', { title: 'Arrakis Album', photos: ['/photos/arrakis-1.jpg', '/photos/arrakis-2.jpg'] }],
-    ['freljord', { title: 'Freljord Album', photos: ['/photos/freljord-1.jpg', '/photos/freljord-2.jpg'] }],
-    ['silly', { title: 'Silly Album', photos: ['/photos/silly-1.jpg', '/photos/silly-2.jpg'] }],
-    ['hoenn', { title: 'Hoenn Album', photos: ['/photos/hoenn-1.jpg', '/photos/hoenn-2.jpg'] }],
-    ['home', { title: 'Home Album', photos: ['/photos/home-1.jpg', '/photos/home-2.jpg'] }],
-    ['lover', { title: 'Lover Album', photos: ['/photos/lover-1.jpg', '/photos/lover-2.jpg'] }],
-    ['minecraft', { title: 'Minecraft Album', photos: ['/photos/minecraft-1.jpg', '/photos/minecraft-2.jpg'] }],
+    ['start', { title: 'Start Album', photos: [
+      new URL('./photos/start-1.jpg', import.meta.url).href,
+      new URL('./photos/start-2.jpg', import.meta.url).href,
+    ] }],
+    ['arrakis', { title: 'Arrakis Album', photos: [
+      new URL('./photos/arrakis-1.jpg', import.meta.url).href,
+      new URL('./photos/arrakis-2.jpg', import.meta.url).href,
+    ] }],
+    ['freljord', { title: 'Freljord Album', photos: [
+      new URL('./photos/freljord-1.jpg', import.meta.url).href,
+      new URL('./photos/freljord-2.jpg', import.meta.url).href,
+    ] }],
+    ['silly', { title: 'Silly Album', photos: [
+      new URL('./photos/silly-1.jpg', import.meta.url).href,
+      new URL('./photos/silly-2.jpg', import.meta.url).href,
+    ] }],
+    ['hoenn', { title: 'Hoenn Album', photos: [
+      new URL('./photos/hoenn-1.jpg', import.meta.url).href,
+      new URL('./photos/hoenn-2.jpg', import.meta.url).href,
+    ] }],
+    ['home', { title: 'Home Album', photos: [
+      new URL('./photos/home-1.jpg', import.meta.url).href,
+      new URL('./photos/home-2.jpg', import.meta.url).href,
+    ] }],
+    ['lover', { title: 'Lover Album', photos: [
+      new URL('./photos/lover-1.jpg', import.meta.url).href,
+      new URL('./photos/lover-2.jpg', import.meta.url).href,
+    ] }],
+    ['minecraft', { title: 'Minecraft Album', photos: [
+      new URL('./photos/minecraft-1.jpg', import.meta.url).href,
+      new URL('./photos/minecraft-2.jpg', import.meta.url).href,
+    ] }],
   ])
 
   constructor() {

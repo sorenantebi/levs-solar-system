@@ -373,7 +373,7 @@ function loadModelOnPlanet(
         mixers.push(mixer)
       }
     },
-    trackDownload(url),
+    trackDownload(),
     (error) => {
       console.error(`Failed to load ${errorLabel} model:`, error)
     },

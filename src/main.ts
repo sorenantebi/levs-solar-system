@@ -29,7 +29,7 @@ import {
   WAVE_SPEED,
 } from './tuning'
 
-// Before the first loader starts, so the bar sees every model.
+// Before the first loader starts, so no model finishes unnoticed.
 initLoadingScreen()
 
 const SAVE_KEY = 'sphere-game:player:v2'
@@ -95,7 +95,7 @@ sunLoader.load(
     })
     sun.add(model)
   },
-  trackDownload(SUN_URL),
+  trackDownload(),
   (error) => {
     console.error('Failed to load sun model:', error)
   },
@@ -446,7 +446,7 @@ if (house) {
         void catSpinSfx.play()
       })
     },
-    trackDownload(HOUSE_CAT_URL),
+    trackDownload(),
     (error) => {
       console.error('Failed to load house cat model:', error)
     },
@@ -481,7 +481,7 @@ if (house) {
       scene.add(bedHolder)
       bindInteraction(bedHolder, 'eepy... so very eepy...')
     },
-    trackDownload(HOUSE_BED_URL),
+    trackDownload(),
     (error) => {
       console.error('Failed to load house bed model:', error)
     },

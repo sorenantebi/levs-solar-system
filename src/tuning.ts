@@ -192,7 +192,7 @@ export const SWIM_UP = 9
  * means four times the fragments — usually the single biggest cost on a Mac.
  * Raise toward 2 for a sharper image, drop to 1 if the frame rate matters more.
  */
-export const MAX_PIXEL_RATIO = 2
+export const MAX_PIXEL_RATIO = 1.5
 /**
  * The shadow camera follows the planet you're on rather than trying to span
  * the whole system. Covering everything at once needed a 168-unit box and a

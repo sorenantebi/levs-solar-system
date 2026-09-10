@@ -9,6 +9,53 @@ import { SCROLLS } from './scrolls'
  * readable at any time. It has two views in one sheet rather than two stacked
  * overlays: the list, and a single scroll opened from it.
  */
+/** Two photos per planet, in the order the worlds were made. */
+const PHOTOS: Record<string, string[]> = {
+  start: [
+    new URL('./photos/start-1.jpeg', import.meta.url).href,
+    new URL('./photos/start-2.jpeg', import.meta.url).href,
+  ],
+  arrakis: [
+    new URL('./photos/arrakis-1.jpeg', import.meta.url).href,
+    new URL('./photos/arrakis-2.jpeg', import.meta.url).href,
+  ],
+  freljord: [
+    new URL('./photos/freljord-1.jpeg', import.meta.url).href,
+    new URL('./photos/freljord-2.jpeg', import.meta.url).href,
+  ],
+  silly: [
+    new URL('./photos/silly-1.jpeg', import.meta.url).href,
+    new URL('./photos/silly-2.jpeg', import.meta.url).href,
+  ],
+  hoenn: [
+    new URL('./photos/hoenn-1.jpeg', import.meta.url).href,
+    new URL('./photos/hoenn-2.jpeg', import.meta.url).href,
+  ],
+  home: [
+    new URL('./photos/home-1.jpeg', import.meta.url).href,
+    new URL('./photos/home-2.jpeg', import.meta.url).href,
+  ],
+  lover: [
+    new URL('./photos/lover-1.jpeg', import.meta.url).href,
+    new URL('./photos/lover-2.jpeg', import.meta.url).href,
+  ],
+  minecraft: [
+    new URL('./photos/minecraft-1.jpeg', import.meta.url).href,
+    new URL('./photos/minecraft-2.jpeg', import.meta.url).href,
+  ],
+}
+
+/**
+ * Home is where it all ends up: its own two photos first, then every other
+ * planet's, so the last album is the whole journey in one place.
+ */
+const HOME_PHOTOS = [
+  ...PHOTOS.home,
+  ...Object.keys(PHOTOS)
+    .filter((name) => name !== 'home')
+    .flatMap((name) => PHOTOS[name]),
+]
+
 export class Hud {
   private readonly root = document.createElement('div')
   private readonly planetName = document.createElement('div')
@@ -35,7 +82,6 @@ export class Hud {
   private readonly albumTitle = document.createElement('div')
   private readonly albumImage = document.createElement('img')
   private readonly albumIndex = document.createElement('div')
-  private readonly albumPath = document.createElement('div')
   private albumPlanet = ''
   private albumPhotoIndex = 0
   private shownState = ''
@@ -52,38 +98,14 @@ export class Hud {
   onReset: (() => void) | null = null
 
   private readonly albums = new Map<string, { title: string; photos: string[] }>([
-    ['start', { title: 'Start Album', photos: [
-      new URL('./photos/start-1.jpg', import.meta.url).href,
-      new URL('./photos/start-2.jpg', import.meta.url).href,
-    ] }],
-    ['arrakis', { title: 'Arrakis Album', photos: [
-      new URL('./photos/arrakis-1.jpg', import.meta.url).href,
-      new URL('./photos/arrakis-2.jpg', import.meta.url).href,
-    ] }],
-    ['freljord', { title: 'Freljord Album', photos: [
-      new URL('./photos/freljord-1.jpg', import.meta.url).href,
-      new URL('./photos/freljord-2.jpg', import.meta.url).href,
-    ] }],
-    ['silly', { title: 'Silly Album', photos: [
-      new URL('./photos/silly-1.jpg', import.meta.url).href,
-      new URL('./photos/silly-2.jpg', import.meta.url).href,
-    ] }],
-    ['hoenn', { title: 'Hoenn Album', photos: [
-      new URL('./photos/hoenn-1.jpg', import.meta.url).href,
-      new URL('./photos/hoenn-2.jpg', import.meta.url).href,
-    ] }],
-    ['home', { title: 'Home Album', photos: [
-      new URL('./photos/home-1.jpg', import.meta.url).href,
-      new URL('./photos/home-2.jpg', import.meta.url).href,
-    ] }],
-    ['lover', { title: 'Lover Album', photos: [
-      new URL('./photos/lover-1.jpg', import.meta.url).href,
-      new URL('./photos/lover-2.jpg', import.meta.url).href,
-    ] }],
-    ['minecraft', { title: 'Minecraft Album', photos: [
-      new URL('./photos/minecraft-1.jpg', import.meta.url).href,
-      new URL('./photos/minecraft-2.jpg', import.meta.url).href,
-    ] }],
+    ['start', { title: 'Start Album', photos: PHOTOS.start }],
+    ['arrakis', { title: 'Arrakis Album', photos: PHOTOS.arrakis }],
+    ['freljord', { title: 'Freljord Album', photos: PHOTOS.freljord }],
+    ['silly', { title: 'Silly Album', photos: PHOTOS.silly }],
+    ['hoenn', { title: 'Hoenn Album', photos: PHOTOS.hoenn }],
+    ['home', { title: 'Home Album', photos: HOME_PHOTOS }],
+    ['lover', { title: 'Lover Album', photos: PHOTOS.lover }],
+    ['minecraft', { title: 'Minecraft Album', photos: PHOTOS.minecraft }],
   ])
 
   constructor() {
@@ -203,7 +225,6 @@ export class Hud {
     this.albumImage.className = 'album-image'
     this.albumImage.alt = 'album photo'
     this.albumIndex.className = 'album-index'
-    this.albumPath.className = 'album-path'
 
     const controls = document.createElement('div')
     controls.className = 'album-controls'
@@ -227,8 +248,15 @@ export class Hud {
     close.addEventListener('click', () => this.close())
 
     controls.append(prev, next, close)
-    this.albumCard.append(this.albumTitle, this.albumImage, this.albumIndex, this.albumPath, controls)
+    this.albumCard.append(this.albumTitle, this.albumImage, this.albumIndex, controls)
     this.album.append(this.albumCard)
+    // Natural size is only known once the file has decoded, so the card is
+    // sized then rather than when the src is set.
+    this.albumImage.addEventListener('load', () => this.fitAlbumCard())
+    this.albumImage.addEventListener('error', () => this.fitAlbumCard())
+    addEventListener('resize', () => {
+      if (this.album.classList.contains('on')) this.fitAlbumCard()
+    })
     this.albumCard.addEventListener('click', (e) => e.stopPropagation())
     this.album.addEventListener('click', () => this.close())
   }
@@ -257,6 +285,29 @@ export class Hud {
     return true
   }
 
+  /**
+   * Sizes the card to the photo's shape: work out how big the picture will be
+   * inside the viewport's budget, then make the card exactly that wide. A
+   * portrait shot gets a tall narrow card, a landscape one a wide short card,
+   * and neither is cropped or letterboxed.
+   */
+  private fitAlbumCard(): void {
+    const naturalW = this.albumImage.naturalWidth
+    const naturalH = this.albumImage.naturalHeight
+    // A photo that failed to load reports 0x0; leave the card at its default.
+    if (!naturalW || !naturalH) {
+      this.albumCard.style.removeProperty('--album-w')
+      return
+    }
+    const padding = 36
+    const maxW = Math.min(720, innerWidth * 0.88) - padding
+    const maxH = Math.min(innerHeight * 0.54, 420)
+    // Never above 1: blowing a small photo up past its own resolution only
+    // makes it blurry.
+    const scale = Math.min(maxW / naturalW, maxH / naturalH, 1)
+    this.albumCard.style.setProperty('--album-w', `${Math.round(naturalW * scale) + padding}px`)
+  }
+
   private renderAlbumPhoto(): void {
     const entry = this.albums.get(this.albumPlanet)
     if (!entry || entry.photos.length === 0) return
@@ -265,7 +316,6 @@ export class Hud {
     const src = entry.photos[this.albumPhotoIndex]
     this.albumImage.src = src
     this.albumIndex.textContent = `${this.albumPhotoIndex + 1} / ${total}`
-    this.albumPath.textContent = src
   }
 
   private stepAlbum(step: number): void {

@@ -351,10 +351,16 @@
       }
       #album-viewer.on { display: flex; }
 
+      /* Width is set per photo from its aspect ratio (see fitAlbumCard), so the
+         card is as wide as the picture wants to be. The fallback covers the
+         moment before the first image reports its size. */
       #album-viewer .album-card {
-        width: min(720px, 88vw);
+        width: var(--album-w, min(720px, 88vw));
+        min-width: min(280px, 86vw);
+        max-width: 88vw;
         max-height: 82vh;
         overflow: auto;
+        transition: width 0.18s ease;
         padding: 18px;
         border-radius: 12px;
         background: #f8f1e3;
@@ -371,9 +377,13 @@
         margin-bottom: 10px;
       }
       #album-viewer .album-image {
+        display: block;
         width: 100%;
-        height: min(54vh, 420px);
-        object-fit: cover;
+        height: auto;
+        /* The card is already sized to the photo, so these only bite in the
+           edge case where min-width wins — contain keeps it undistorted. */
+        max-height: min(54vh, 420px);
+        object-fit: contain;
         border-radius: 8px;
         border: 1px solid #ccb994;
         background: repeating-linear-gradient(
@@ -388,12 +398,6 @@
         margin-top: 10px;
         color: #694f37;
         letter-spacing: 0.06em;
-      }
-      #album-viewer .album-path {
-        margin-top: 4px;
-        color: #7a6148;
-        font-size: 12px;
-        word-break: break-all;
       }
       #album-viewer .album-controls {
         display: flex;

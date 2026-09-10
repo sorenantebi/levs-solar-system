@@ -59,6 +59,10 @@ const ARRAKIS_ROCKY_DIR = new THREE.Vector3(0.72, 0.45, -0.53).normalize()
 const ARRAKIS_ROCKY_URL = new URL('./models/project_hail_mary_rocky.glb', import.meta.url).href
 const ARRAKIS_BENCH_DIR = new THREE.Vector3(-0.24, 0.4, 0.68).normalize()
 const ARRAKIS_BENCH_URL = new URL('./models/better_call_saul_bench.glb', import.meta.url).href
+// Well clear of both Rocky and the bench — roughly 84 and 109 degrees round the
+// sphere from them, so nothing ends up standing inside anything else.
+const ARRAKIS_OHMU_DIR = new THREE.Vector3(-1.55, 0.4, -0.72).normalize()
+const ARRAKIS_OHMU_URL = new URL('./models/ohmu.glb', import.meta.url).href
 const LOVER_RADIO_DIR = new THREE.Vector3(-0.48, 0.72, -0.5).normalize()
 const LOVER_RADIO_URL = new URL('./models/retro_radio.glb', import.meta.url).href
 const MINECRAFT_COW_URL = new URL('./models/minecraft_-_cow.glb', import.meta.url).href
@@ -519,7 +523,12 @@ function scatter(
 
     if (terrainAt(planet.skin, planet.noiseScale, dir.x, dir.y, dir.z) < 0.5) continue
     const ground = groundRadius(planet, dir)
-    if (ground <= planet.radius + minLift) continue
+    // Strictly below, not at or below: lover is relief 0, so its ground sits
+    // exactly at the base radius everywhere. Rejecting equality rejected that
+    // whole planet, and its album was never placed. Anywhere with relief the
+    // terrain test above already guarantees ground > radius, so this only
+    // changes the smooth worlds.
+    if (ground < planet.radius + minLift) continue
     // On a water world it also has to be above the waterline, not on a shoal.
     if (planet.water > 0 && ground <= waterRadius(planet) + 0.15) continue
 
@@ -915,6 +924,25 @@ export function buildScenery(
         'arrakis Bench',
         mixers,
         new THREE.Euler(0, 0, -0.18),
+      )
+
+      // Big enough to read as one of the giant ones, on a planet of radius 5.
+      const ohmuPoint = ARRAKIS_OHMU_DIR.clone()
+        .multiplyScalar(groundRadius(planet, ARRAKIS_OHMU_DIR))
+        .add(planet.center)
+      planetAvoid.push({ point: ohmuPoint, radius: 3.2 })
+      loadModelOnPlanet(
+        scene,
+        planet,
+        ARRAKIS_OHMU_URL,
+        ARRAKIS_OHMU_DIR.clone(),
+        0.5,
+        Math.PI * 0.75,
+        (p, d) => groundRadius(p, d) - 0.05,
+        'arrakis Ohmu',
+        mixers,
+        new THREE.Euler(-0.2, 0, 0),
+        (holder) => onInteractable?.(holder, 'meep'),
       )
     }
 

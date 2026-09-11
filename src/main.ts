@@ -241,9 +241,6 @@ document.body.append(interactHint)
 const SCROLL_CLICK_RADIUS = 2.6
 const INTERACT_CLICK_RADIUS = 2.5
 const TARGET_CONE_COS = 0.992
-const ARRAKIS_ROCKY_COLLIDER_DIR = new THREE.Vector3(0.72, 0.45, -0.53).normalize()
-const ARRAKIS_ROCKY_COLLIDER_RADIUS = 1.55
-const _rockyToPlayer = new THREE.Vector3()
 
 for (const item of items) scrollRoots.set(item.object.id, item)
 
@@ -498,11 +495,6 @@ const keepClear = [
 ]
 const scenery = buildScenery(scene, groundRadius, keepClear, bindInteraction)
 
-const arrakis = PLANETS.find((p) => p.name === 'arrakis')
-const rockyColliderCenter = arrakis
-  ? arrakis.center.clone().addScaledVector(ARRAKIS_ROCKY_COLLIDER_DIR, groundRadius(arrakis, ARRAKIS_ROCKY_COLLIDER_DIR))
-  : null
-
 hud.onReset = () => {
   for (const item of items) {
     item.collected = false
@@ -516,17 +508,6 @@ const player = new Player()
 player.collider = {
   resolve(pos: THREE.Vector3, vel: THREE.Vector3): void {
     house?.resolve(pos, vel)
-    if (!rockyColliderCenter) return
-
-    _rockyToPlayer.subVectors(pos, rockyColliderCenter)
-    const dist = _rockyToPlayer.length()
-    if (dist >= ARRAKIS_ROCKY_COLLIDER_RADIUS) return
-
-    const normal = _rockyToPlayer.multiplyScalar(1 / Math.max(dist, 1e-6))
-    pos.copy(rockyColliderCenter).addScaledVector(normal, ARRAKIS_ROCKY_COLLIDER_RADIUS)
-
-    const into = vel.dot(normal)
-    if (into < 0) vel.addScaledVector(normal, -into)
   },
   floorAt(pos: THREE.Vector3, planetCentre: THREE.Vector3): number {
     return house?.floorAt?.(pos, planetCentre) ?? 0

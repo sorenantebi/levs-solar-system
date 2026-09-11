@@ -53,12 +53,10 @@ const MEADOW_TREVENANT_DIR = new THREE.Vector3(1, 0.3, 0.56).normalize()
 const MEADOW_TREVENANT_URL = new URL('./models/trevenant.glb', import.meta.url).href
 const MEADOW_AZUMARILL_DIR = new THREE.Vector3(0.5, 0.9, 0.62).normalize()
 const MEADOW_AZUMARILL_URL = new URL('./models/azumarill.glb', import.meta.url).href
-const ARRAKIS_ROCKY_DIR = new THREE.Vector3(0.72, 0.45, -0.53).normalize()
-const ARRAKIS_ROCKY_URL = new URL('./models/project_hail_mary_rocky.glb', import.meta.url).href
 const ARRAKIS_BENCH_DIR = new THREE.Vector3(-0.24, 0.4, 0.68).normalize()
 const ARRAKIS_BENCH_URL = new URL('./models/better_call_saul_bench.glb', import.meta.url).href
-// Well clear of both Rocky and the bench — roughly 84 and 109 degrees round the
-// sphere from them, so nothing ends up standing inside anything else.
+// Well clear of the bench — roughly 109 degrees round the sphere from it, so
+// nothing ends up standing inside anything else.
 const ARRAKIS_OHMU_DIR = new THREE.Vector3(-1.55, 0.4, -0.72).normalize()
 const ARRAKIS_OHMU_URL = new URL('./models/ohmu.glb', import.meta.url).href
 const LOVER_RADIO_DIR = new THREE.Vector3(-0.48, 0.72, -0.5).normalize()
@@ -871,24 +869,6 @@ export function buildScenery(
     }
 
     if (planet.name === 'arrakis') {
-      const rockyPoint = ARRAKIS_ROCKY_DIR.clone()
-        .multiplyScalar(groundRadius(planet, ARRAKIS_ROCKY_DIR))
-        .add(planet.center)
-      planetAvoid.push({ point: rockyPoint, radius: 2.3 })
-      loadModelOnPlanet(
-        scene,
-        planet,
-        ARRAKIS_ROCKY_URL,
-        ARRAKIS_ROCKY_DIR.clone(),
-        1.2,
-        Math.PI * 0.4,
-        groundRadius,
-        'arrakis Rocky',
-        mixers,
-        undefined,
-        (holder) => onInteractable?.(holder, 'AMAZE AMAZE AMAZE'),
-      )
-
       const benchPoint = ARRAKIS_BENCH_DIR.clone()
         .multiplyScalar(groundRadius(planet, ARRAKIS_BENCH_DIR))
         .add(planet.center)

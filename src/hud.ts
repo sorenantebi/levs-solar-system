@@ -56,6 +56,10 @@ const HOME_PHOTOS = [
     .flatMap((name) => PHOTOS[name]),
 ]
 
+/** A transparent 1x1: clears the frame without a broken-image icon. */
+const BLANK_PIXEL =
+  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+
 export class Hud {
   private readonly root = document.createElement('div')
   private readonly planetName = document.createElement('div')
@@ -84,6 +88,9 @@ export class Hud {
   private readonly albumIndex = document.createElement('div')
   private albumPlanet = ''
   private albumPhotoIndex = 0
+  /** Bumped per photo request, so a slow load can't overwrite a newer one. */
+  private albumLoadToken = 0
+  private readonly preloaded = new Map<string, HTMLImageElement>()
   private shownState = ''
   private toastTimer = 0
   private toastSticky = false
@@ -252,8 +259,6 @@ export class Hud {
     this.album.append(this.albumCard)
     // Natural size is only known once the file has decoded, so the card is
     // sized then rather than when the src is set.
-    this.albumImage.addEventListener('load', () => this.fitAlbumCard())
-    this.albumImage.addEventListener('error', () => this.fitAlbumCard())
     addEventListener('resize', () => {
       if (this.album.classList.contains('on')) this.fitAlbumCard()
     })
@@ -291,9 +296,10 @@ export class Hud {
    * portrait shot gets a tall narrow card, a landscape one a wide short card,
    * and neither is cropped or letterboxed.
    */
-  private fitAlbumCard(): void {
-    const naturalW = this.albumImage.naturalWidth
-    const naturalH = this.albumImage.naturalHeight
+  private fitAlbumCard(
+    naturalW: number = this.albumImage.naturalWidth,
+    naturalH: number = this.albumImage.naturalHeight,
+  ): void {
     // A photo that failed to load reports 0x0; leave the card at its default.
     if (!naturalW || !naturalH) {
       this.albumCard.style.removeProperty('--album-w')
@@ -308,14 +314,57 @@ export class Hud {
     this.albumCard.style.setProperty('--album-w', `${Math.round(naturalW * scale) + padding}px`)
   }
 
+  /**
+   * Setting img.src leaves the old picture on screen until the new file has
+   * decoded, which is why opening an album used to show the planet you were on
+   * before. So: blank the frame at once, decode the new photo off-screen, and
+   * only swap it in when it is actually ready.
+   */
   private renderAlbumPhoto(): void {
     const entry = this.albums.get(this.albumPlanet)
     if (!entry || entry.photos.length === 0) return
     const total = entry.photos.length
     this.albumPhotoIndex = (this.albumPhotoIndex + total) % total
     const src = entry.photos[this.albumPhotoIndex]
-    this.albumImage.src = src
     this.albumIndex.textContent = `${this.albumPhotoIndex + 1} / ${total}`
+
+    const token = ++this.albumLoadToken
+    this.albumCard.classList.add('loading')
+    this.albumImage.src = BLANK_PIXEL
+
+    const decoder = this.preload(src)
+    const settle = (): void => {
+      // Stepped past this one while it was still coming down the wire.
+      if (token !== this.albumLoadToken) return
+      this.albumCard.classList.remove('loading')
+      if (decoder.naturalWidth && decoder.naturalHeight) {
+        this.albumImage.src = src
+        this.fitAlbumCard(decoder.naturalWidth, decoder.naturalHeight)
+      } else {
+        this.albumCard.style.removeProperty('--album-w')
+      }
+    }
+    if (decoder.complete) settle()
+    else {
+      decoder.addEventListener('load', settle, { once: true })
+      decoder.addEventListener('error', settle, { once: true })
+    }
+
+    // Warm the neighbours so paging through an album is instant.
+    if (total > 1) {
+      this.preload(entry.photos[(this.albumPhotoIndex + 1) % total])
+      this.preload(entry.photos[(this.albumPhotoIndex - 1 + total) % total])
+    }
+  }
+
+  /** Fetches a photo into the browser cache, once per URL. */
+  private preload(src: string): HTMLImageElement {
+    const existing = this.preloaded.get(src)
+    if (existing) return existing
+    const img = new Image()
+    img.src = src
+    this.preloaded.set(src, img)
+    return img
   }
 
   private stepAlbum(step: number): void {

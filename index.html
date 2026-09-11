@@ -394,6 +394,11 @@
           #efe6d3 24px
         );
       }
+      /* While the next photo decodes: hold the frame open at a neutral size
+         showing the parchment stripes, rather than the previous picture. */
+      #album-viewer .album-card.loading .album-image {
+        height: min(54vh, 420px);
+      }
       #album-viewer .album-index {
         margin-top: 10px;
         color: #694f37;

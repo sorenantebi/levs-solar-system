@@ -148,6 +148,37 @@ let jazzMusicPendingStart = false
 const catSpinSfx = new Audio(CAT_SPIN_URL)
 catSpinSfx.preload = 'auto'
 
+// The cat spins for exactly as long as its sound is playing. Driven off the
+// audio element rather than a timer, so the two can't drift apart — and so a
+// sound the browser refuses to play leaves a cat that isn't spinning either.
+// Phase boundaries measured off cat-spin.mp3 with ffmpeg's silencedetect:
+// quiet until 0.41, a burst to 1.91, a beat of nothing to 3.25, a second burst
+// to 5.25, then silence. Fast through the first, still through the gap, slow
+// through the second.
+const CAT_SPIN_FAST_UNTIL = 1.91
+const CAT_SPIN_SLOW_FROM = 3.25
+const CAT_SPIN_SLOW_UNTIL = 5.25
+const CAT_SPIN_STARTS = 0.41
+const CAT_SPIN_FAST = Math.PI * 6
+const CAT_SPIN_SLOW = Math.PI * 1.6
+
+/**
+ * Read off the sound's own playhead rather than a clock of our own, so the
+ * turns stay locked to the noise however the audio is stalled or restarted.
+ */
+function catSpinSpeed(t: number): number {
+  if (t >= CAT_SPIN_STARTS && t < CAT_SPIN_FAST_UNTIL) return CAT_SPIN_FAST
+  if (t >= CAT_SPIN_SLOW_FROM && t < CAT_SPIN_SLOW_UNTIL) return CAT_SPIN_SLOW
+  return 0
+}
+let catSpinRoot: THREE.Object3D | null = null
+let catSpinning = false
+for (const event of ['ended', 'pause'] as const) {
+  catSpinSfx.addEventListener(event, () => {
+    catSpinning = false
+  })
+}
+
 // Browsers block audio until the page has seen a real user gesture. A first
 // visit can slip through on the browser's media-engagement history, but a
 // reload usually lands back under the policy and play() rejects silently. So
@@ -438,9 +469,17 @@ if (house) {
       catHolder.quaternion.copy(house.group.quaternion)
       catHolder.rotateY(-Math.PI * 0.1)
       scene.add(catHolder)
+      catSpinRoot = catHolder
       bindInteraction(catHolder, undefined, () => {
         catSpinSfx.currentTime = 0
-        void catSpinSfx.play()
+        void catSpinSfx.play().then(
+          () => {
+            catSpinning = true
+          },
+          () => {
+            // Autoplay policy said no; don't spin silently.
+          },
+        )
       })
     },
     trackDownload(),
@@ -732,6 +771,10 @@ function frame(): void {
   setWaveTime?.(elapsed * WAVE_SPEED)
   animateCollectibles(items, elapsed)
   scenery.update(elapsed)
+  // Its own axis, so it stays upright on the floor rather than tumbling.
+  if (catSpinning && catSpinRoot) {
+    catSpinRoot.rotateY(catSpinSpeed(catSpinSfx.currentTime) * dt)
+  }
 
   // Swimming counts as settled, not airborne. Freezing the camera's up-vector
   // is meant to stop the world spinning during a jump — but if it stays frozen

@@ -384,6 +384,9 @@
            edge case where min-width wins — contain keeps it undistorted. */
         max-height: min(54vh, 420px);
         object-fit: contain;
+        /* Transparent until the load handler says the photo is really there. */
+        opacity: 0;
+        transition: opacity 0.2s ease;
         border-radius: 8px;
         border: 1px solid #ccb994;
         background: repeating-linear-gradient(
@@ -393,6 +396,12 @@
           #efe6d3 12px,
           #efe6d3 24px
         );
+      }
+      #album-viewer .album-image.ready { opacity: 1; }
+      /* Holds the frame open while the next photo decodes, so the card doesn't
+         collapse and snap back open between pictures. */
+      #album-viewer .album-card.loading .album-image {
+        height: min(54vh, 420px);
       }
       #album-viewer .album-index {
         margin-top: 10px;

@@ -49,8 +49,6 @@ const SKY_PENGUIN_MIN_LIFT = 0.35
 const SKY_GAMEPAD_MIN_LIFT = 0.5
 const SKY_TREE_FOLIAGE = 0xf3f9ff
 const SKY_TREE_BARK = 0xb9c4d2
-const MEADOW_SLOWPOKE_DIR = new THREE.Vector3(0.34, 0.18, -0.92).normalize()
-const MEADOW_SLOWPOKE_URL = new URL('./models/detailed_slowpoke.glb', import.meta.url).href
 const MEADOW_TREVENANT_DIR = new THREE.Vector3(1, 0.3, 0.56).normalize()
 const MEADOW_TREVENANT_URL = new URL('./models/trevenant.glb', import.meta.url).href
 const MEADOW_AZUMARILL_DIR = new THREE.Vector3(0.5, 0.9, 0.62).normalize()
@@ -737,24 +735,6 @@ export function buildScenery(
     }
 
     if (planet.name === 'home') {
-      const slowpokePoint = MEADOW_SLOWPOKE_DIR.clone()
-        .multiplyScalar(waterRadius(planet) - 1)
-        .add(planet.center)
-      planetAvoid.push({ point: slowpokePoint, radius: 2.6 })
-      loadModelOnPlanet(
-        scene,
-        planet,
-        MEADOW_SLOWPOKE_URL,
-        MEADOW_SLOWPOKE_DIR.clone(),
-        1.4,
-        Math.PI * 0.9,
-        () => waterRadius(planet) - 1,
-        'home Slowpoke',
-        mixers,
-        undefined,
-        (holder) => onInteractable?.(holder, 'MUHHHHHHHHH'),
-      )
-
       const trevenantPoint = MEADOW_TREVENANT_DIR.clone()
         .multiplyScalar(groundRadius(planet, MEADOW_TREVENANT_DIR))
         .add(planet.center)

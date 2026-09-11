@@ -251,9 +251,18 @@ export class Hud {
     this.albumCard.append(this.albumTitle, this.albumImage, this.albumIndex, controls)
     this.album.append(this.albumCard)
     // Natural size is only known once the file has decoded, so the card is
-    // sized then rather than when the src is set.
-    this.albumImage.addEventListener('load', () => this.fitAlbumCard())
-    this.albumImage.addEventListener('error', () => this.fitAlbumCard())
+    // sized then rather than when the src is set — and that is also the moment
+    // the new photo is safe to reveal.
+    this.albumImage.addEventListener('load', () => {
+      this.albumCard.classList.remove('loading')
+      this.albumImage.classList.add('ready')
+      this.fitAlbumCard()
+    })
+    this.albumImage.addEventListener('error', () => {
+      // Leave the frame blank rather than showing whatever was there before.
+      this.albumCard.classList.remove('loading')
+      this.albumCard.style.removeProperty('--album-w')
+    })
     addEventListener('resize', () => {
       if (this.album.classList.contains('on')) this.fitAlbumCard()
     })
@@ -314,8 +323,17 @@ export class Hud {
     const total = entry.photos.length
     this.albumPhotoIndex = (this.albumPhotoIndex + total) % total
     const src = entry.photos[this.albumPhotoIndex]
-    this.albumImage.src = src
     this.albumIndex.textContent = `${this.albumPhotoIndex + 1} / ${total}`
+
+    // Assigning src does not clear the element: the browser keeps painting the
+    // photo that is already there until the new file has decoded, which is how
+    // the album came up showing the planet you were on before. Hide the frame
+    // now and hold its height; the load handler reveals it when the new photo
+    // is genuinely on screen. Only one request is ever in flight on this
+    // element, so a slow load cannot land after a newer one.
+    this.albumImage.classList.remove('ready')
+    this.albumCard.classList.add('loading')
+    this.albumImage.src = src
   }
 
   private stepAlbum(step: number): void {

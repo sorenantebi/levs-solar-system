@@ -34,7 +34,17 @@ initLoadingScreen()
 
 const SAVE_KEY = 'sphere-game:player:v2'
 const MUTE_KEY = 'sphere-game:mute:v1'
-const PLANET_MUSIC_VOLUME = 0.3
+// One per track, not one shared number: the five were mastered at very
+// different levels — mean volume spans 6.8 dB, measured with ffmpeg's
+// volumedetect — so a single setting makes the loud ones shout. These trim each
+// down to roughly match the quietest (ghibli), which keeps the 0.3 reference.
+const PLANET_MUSIC_VOLUME = {
+  ghibli: 0.3,
+  minecraft: 0.1,
+  lover: 0.19,
+  unova: 0.05,
+  jazz: 0.15,
+}
 
 const renderer = new THREE.WebGLRenderer({ antialias: true })
 renderer.setPixelRatio(Math.min(devicePixelRatio, MAX_PIXEL_RATIO))
@@ -123,27 +133,27 @@ const hud = new Hud()
 const unovaMusic = new Audio(UNOVA_MUSIC_URL)
 unovaMusic.preload = 'auto'
 unovaMusic.loop = true
-unovaMusic.volume = PLANET_MUSIC_VOLUME
+unovaMusic.volume = PLANET_MUSIC_VOLUME.unova
 let unovaMusicPendingStart = false
 const homeMusic = new Audio(HOME_MUSIC_URL)
 homeMusic.preload = 'auto'
 homeMusic.loop = true
-homeMusic.volume = PLANET_MUSIC_VOLUME
+homeMusic.volume = PLANET_MUSIC_VOLUME.ghibli
 let homeMusicPendingStart = false
 const loverMusic = new Audio(LOVER_MUSIC_URL)
 loverMusic.preload = 'auto'
 loverMusic.loop = true
-loverMusic.volume = PLANET_MUSIC_VOLUME
+loverMusic.volume = PLANET_MUSIC_VOLUME.lover
 let loverMusicPendingStart = false
 const minecraftMusic = new Audio(MINECRAFT_MUSIC_URL)
 minecraftMusic.preload = 'auto'
 minecraftMusic.loop = true
-minecraftMusic.volume = PLANET_MUSIC_VOLUME
+minecraftMusic.volume = PLANET_MUSIC_VOLUME.minecraft
 let minecraftMusicPendingStart = false
 const jazzMusic = new Audio(JAZZ_MUSIC_URL)
 jazzMusic.preload = 'auto'
 jazzMusic.loop = true
-jazzMusic.volume = PLANET_MUSIC_VOLUME
+jazzMusic.volume = PLANET_MUSIC_VOLUME.jazz
 let jazzMusicPendingStart = false
 const catSpinSfx = new Audio(CAT_SPIN_URL)
 catSpinSfx.preload = 'auto'

@@ -120,7 +120,7 @@ export function waterRadius(p: Planet): number {
 }
 
 /**
- * A loose ring of four, tilted off the horizontal, plus the Hoenn sitting
+ * A loose ring of four, tilted off the horizontal, plus the Unova sitting
  * above the ring. The spacing is tuned so the worlds feel separated, while a
  * held jump still carries you between the nearby neighbours.
  *
@@ -158,7 +158,7 @@ export const PLANETS: Planet[] = [
   // overridden well above the water line so the plateaus break the surface as
   // islands instead of drowning.
   planet(
-    'hoenn',
+    'unova',
     [0, 23, 3],
     6,
     { land: 0x86d69a, ocean: 0xdccba4, seaLevel: 0.575, seed: 9161 },

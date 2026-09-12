@@ -20,8 +20,8 @@ import {
  */
 
 /** How many of each, per planet. The exotic worlds get neither. */
-const TREES: Record<string, number> = { start: 3, freljord: 2, home: 2, hoenn: 2, minecraft: 1 }
-const CLOUDS: Record<string, number> = { start: 3, freljord: 3, home: 3, hoenn: 3, minecraft: 3 }
+const TREES: Record<string, number> = { start: 3, freljord: 2, home: 2, unova: 2, minecraft: 1 }
+const CLOUDS: Record<string, number> = { start: 3, freljord: 3, home: 3, unova: 3, minecraft: 3 }
 const TVS: Record<string, number> = { arrakis: 1 }
 const GAMES: Record<string, number> = { freljord: 2 }
 const ALBUM_SURFACE_LIFT = 0.06
@@ -30,19 +30,19 @@ const ALBUMS: Record<string, number> = {
   arrakis: 1,
   freljord: 1,
   silly: 1,
-  hoenn: 1,
+  unova: 1,
   home: 1,
   lover: 1,
   minecraft: 1,
 }
 export const HOME_POKEMON_DIR = new THREE.Vector3(0.2, 0.5, 0.74).normalize()
 export const HOME_POKEMON_CLEAR_RADIUS = 2
-const HOENN_MILOTIC_DIR = new THREE.Vector3(-0.62, 0.12, 0.78).normalize()
-const HOENN_MILOTIC_URL = new URL('./models/milotic-animation.glb', import.meta.url).href
-const HOENN_PSYDUCK_URL = new URL('./models/psyduck.glb', import.meta.url).href
-const HOENN_ROWLET_URL = new URL('./models/rowlet.glb', import.meta.url).href
-const HOENN_PHANTUMP_URL = new URL('./models/phantump.glb', import.meta.url).href
-const HOENN_TREE_URL = new URL('./models/tree.glb', import.meta.url).href
+const UNOVA_MILOTIC_DIR = new THREE.Vector3(-0.62, 0.12, 0.78).normalize()
+const UNOVA_MILOTIC_URL = new URL('./models/milotic-animation.glb', import.meta.url).href
+const UNOVA_PSYDUCK_URL = new URL('./models/psyduck.glb', import.meta.url).href
+const UNOVA_ROWLET_URL = new URL('./models/rowlet.glb', import.meta.url).href
+const UNOVA_PHANTUMP_URL = new URL('./models/phantump.glb', import.meta.url).href
+const UNOVA_TREE_URL = new URL('./models/tree.glb', import.meta.url).href
 const SKY_PENGUIN_URL = new URL('./models/penguin_-_tft.glb', import.meta.url).href
 const SKY_PORO_URL = new URL('./models/poro.glb', import.meta.url).href
 const SKY_PENGUIN_MIN_LIFT = 0.35
@@ -582,7 +582,7 @@ export function buildScenery(
     const random = rng(planet.skin.seed * 7919 + 13)
     const planetAvoid = avoid.slice()
 
-    if (planet.name === 'hoenn') {
+    if (planet.name === 'unova') {
       let azurillDir: THREE.Vector3 | null = null
       const dir = scatter(planet, 1, groundRadius, planetAvoid, random)[0]
       if (dir) {
@@ -598,26 +598,26 @@ export function buildScenery(
           0.8,
           Math.PI * 0.3,
           groundRadius,
-          'hoenn Pokemon',
+          'unova Pokemon',
           mixers,
           undefined,
           (holder) => onInteractable?.(holder, 'azuu meep'),
         )
       }
 
-      const miloticPoint = HOENN_MILOTIC_DIR.clone()
+      const miloticPoint = UNOVA_MILOTIC_DIR.clone()
         .multiplyScalar(waterRadius(planet) - 0.6)
         .add(planet.center)
       planetAvoid.push({ point: miloticPoint, radius: 3.0 })
       loadModelOnPlanet(
         scene,
         planet,
-        HOENN_MILOTIC_URL,
-        HOENN_MILOTIC_DIR.clone(),
+        UNOVA_MILOTIC_URL,
+        UNOVA_MILOTIC_DIR.clone(),
         2.4,
         -Math.PI * 0.12,
         () => waterRadius(planet) - 0.6,
-        'hoenn Milotic',
+        'unova Milotic',
         mixers,
         undefined,
         (holder) => onInteractable?.(holder, 'AOOOOOOOWOWOOOOO'),
@@ -675,12 +675,12 @@ export function buildScenery(
         loadModelOnPlanet(
           scene,
           planet,
-          HOENN_PSYDUCK_URL,
+          UNOVA_PSYDUCK_URL,
           psyduckDir,
           1.0,
           random() * Math.PI * 2,
           groundRadius,
-          'hoenn Psyduck',
+          'unova Psyduck',
           mixers,
           undefined,
           (holder) => onInteractable?.(holder, 'PSYDUCKKK... my head hurt'),
@@ -697,12 +697,12 @@ export function buildScenery(
         loadModelOnPlanet(
           scene,
           planet,
-          HOENN_ROWLET_URL,
+          UNOVA_ROWLET_URL,
           rowletDir,
           0.75,
           random() * Math.PI * 2,
           groundRadius,
-          'hoenn Rowlet',
+          'unova Rowlet',
           mixers,
           undefined,
           (holder) => onInteractable?.(holder, 'CAWWW'),
@@ -719,12 +719,12 @@ export function buildScenery(
         loadModelOnPlanet(
           scene,
           planet,
-          HOENN_PHANTUMP_URL,
+          UNOVA_PHANTUMP_URL,
           phantumpDir,
           0.8,
           random() * Math.PI * 2,
           groundRadius,
-          'hoenn Phantump',
+          'unova Phantump',
           mixers,
           undefined,
           (holder) => onInteractable?.(holder, 'boo'),
@@ -934,7 +934,7 @@ export function buildScenery(
         : new THREE.Color(planet.skin.land).lerp(new THREE.Color(0x2f7a3f), 0.55)
       const minTreeLift = planet.voxelGrid > 0 ? VOXEL_BLOCK : 0
       for (const dir of scatter(planet, treeCount, groundRadius, planetAvoid, random, minTreeLift)) {
-        if (planet.name === 'hoenn') {
+        if (planet.name === 'unova') {
           const treePoint = dir
             .clone()
             .multiplyScalar(groundRadius(planet, dir))
@@ -944,12 +944,12 @@ export function buildScenery(
           loadModelOnPlanet(
             scene,
             planet,
-            HOENN_TREE_URL,
+            UNOVA_TREE_URL,
             dir,
             1.8,
             random() * Math.PI * 2,
             groundRadius,
-            'hoenn Tree',
+            'unova Tree',
             mixers,
           )
           continue

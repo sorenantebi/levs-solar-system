@@ -41,8 +41,8 @@ export const SCROLLS: ScrollText[] = [
     text: 'I love gaming with you. I love playing minecraft and tft and BLOONS with you. I love spending my evenings with you. \n\n### Coupon for any small game that you want ###',
   },
   {
-    planet: 'hoenn',
-    label: 'Hoenn',
+    planet: 'unova',
+    label: 'Unova',
     title: 'The Fourth Scroll',
     colour: 0x8fd0ee,
     text: 'I love traveling with you and exploring fun places together. I love collecting pokemon cards with you and going to TCG places. I cant wait to open up cards later YIPEEE',

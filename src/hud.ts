@@ -27,9 +27,9 @@ const PHOTOS: Record<string, string[]> = {
     new URL('./photos/silly-1.jpeg', import.meta.url).href,
     new URL('./photos/silly-2.jpeg', import.meta.url).href,
   ],
-  hoenn: [
-    new URL('./photos/hoenn-1.jpeg', import.meta.url).href,
-    new URL('./photos/hoenn-2.jpeg', import.meta.url).href,
+  unova: [
+    new URL('./photos/unova-1.jpeg', import.meta.url).href,
+    new URL('./photos/unova-2.jpeg', import.meta.url).href,
   ],
   home: [
     new URL('./photos/home-1.jpeg', import.meta.url).href,
@@ -102,7 +102,7 @@ export class Hud {
     ['arrakis', { title: 'Arrakis Album', photos: PHOTOS.arrakis }],
     ['freljord', { title: 'Freljord Album', photos: PHOTOS.freljord }],
     ['silly', { title: 'Silly Album', photos: PHOTOS.silly }],
-    ['hoenn', { title: 'Hoenn Album', photos: PHOTOS.hoenn }],
+    ['unova', { title: 'Unova Album', photos: PHOTOS.unova }],
     ['home', { title: 'Home Album', photos: HOME_PHOTOS }],
     ['lover', { title: 'Lover Album', photos: PHOTOS.lover }],
     ['minecraft', { title: 'Minecraft Album', photos: PHOTOS.minecraft }],

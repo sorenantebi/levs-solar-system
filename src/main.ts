@@ -68,7 +68,7 @@ const LIGHT_DIR = new THREE.Vector3(0.45, 0.8, 0.35).normalize()
 const SUN_URL = new URL('./models/the_sun.glb', import.meta.url).href
 const HOUSE_CAT_URL = new URL('./models/oiiaioooooiai_cat.glb', import.meta.url).href
 const HOUSE_BED_URL = new URL('./models/bed_minecraft.glb', import.meta.url).href
-const HOENN_MUSIC_URL = new URL('./music/hoenn-music.mp3', import.meta.url).href
+const UNOVA_MUSIC_URL = new URL('./music/unova-music.mp3', import.meta.url).href
 const HOME_MUSIC_URL = new URL('./music/ghibli-music.mp3', import.meta.url).href
 const LOVER_MUSIC_URL = new URL('./music/lover-music.mp3', import.meta.url).href
 const MINECRAFT_MUSIC_URL = new URL('./music/minecraft-music.mp3', import.meta.url).href
@@ -120,11 +120,11 @@ const setWaveTime = buildWater(scene, envMap)
 
 const items = buildCollectibles(scene, groundRadius)
 const hud = new Hud()
-const hoennMusic = new Audio(HOENN_MUSIC_URL)
-hoennMusic.preload = 'auto'
-hoennMusic.loop = true
-hoennMusic.volume = PLANET_MUSIC_VOLUME
-let hoennMusicPendingStart = false
+const unovaMusic = new Audio(UNOVA_MUSIC_URL)
+unovaMusic.preload = 'auto'
+unovaMusic.loop = true
+unovaMusic.volume = PLANET_MUSIC_VOLUME
+let unovaMusicPendingStart = false
 const homeMusic = new Audio(HOME_MUSIC_URL)
 homeMusic.preload = 'auto'
 homeMusic.loop = true
@@ -217,7 +217,7 @@ function flushBlockedMusic(): void {
 }
 for (const event of UNLOCK_EVENTS) window.addEventListener(event, flushBlockedMusic, true)
 let muted = localStorage.getItem(MUTE_KEY) === '1'
-hoennMusic.muted = muted
+unovaMusic.muted = muted
 homeMusic.muted = muted
 loverMusic.muted = muted
 minecraftMusic.muted = muted
@@ -233,7 +233,7 @@ function syncSoundToggleLabel(): void {
 syncSoundToggleLabel()
 soundToggle.addEventListener('click', () => {
   muted = !muted
-  hoennMusic.muted = muted
+  unovaMusic.muted = muted
   homeMusic.muted = muted
   loverMusic.muted = muted
   minecraftMusic.muted = muted
@@ -245,7 +245,7 @@ soundToggle.addEventListener('click', () => {
 document.body.append(soundToggle)
 
 function isJazzPlanet(name: string): boolean {
-  return name !== 'hoenn' && name !== 'home' && name !== 'lover' && name !== 'minecraft'
+  return name !== 'unova' && name !== 'home' && name !== 'lover' && name !== 'minecraft'
 }
 
 type InteractionTarget = {
@@ -733,9 +733,9 @@ function startPendingMusic(): void {
   if (!hasEntered || !player.grounded) return
   const currentPlanetName = player.planet.name
 
-  if (currentPlanetName === 'hoenn' && hoennMusicPendingStart) {
-    hoennMusicPendingStart = false
-    playMusicFromRandomPoint(hoennMusic)
+  if (currentPlanetName === 'unova' && unovaMusicPendingStart) {
+    unovaMusicPendingStart = false
+    playMusicFromRandomPoint(unovaMusic)
   }
 
   if (currentPlanetName === 'home' && homeMusicPendingStart) {
@@ -785,9 +785,9 @@ function frame(): void {
 
   const currentPlanetName = player.planet.name
   if (currentPlanetName !== prevPlanetName) {
-    if (prevPlanetName === 'hoenn') {
-      stopMusic(hoennMusic)
-      hoennMusicPendingStart = false
+    if (prevPlanetName === 'unova') {
+      stopMusic(unovaMusic)
+      unovaMusicPendingStart = false
     }
     if (prevPlanetName === 'home') {
       stopMusic(homeMusic)
@@ -805,7 +805,7 @@ function frame(): void {
       stopMusic(jazzMusic)
       jazzMusicPendingStart = false
     }
-    if (currentPlanetName === 'hoenn') hoennMusicPendingStart = true
+    if (currentPlanetName === 'unova') unovaMusicPendingStart = true
     if (currentPlanetName === 'home') homeMusicPendingStart = true
     if (currentPlanetName === 'lover') loverMusicPendingStart = true
     if (currentPlanetName === 'minecraft') minecraftMusicPendingStart = true
